@@ -17,18 +17,34 @@ const CHAT_MESSAGES = [
 
 export default function LandingPage() {
   const [visibleMessages, setVisibleMessages] = useState([])
-  const [typingIndex, setTypingIndex] = useState(0)
+  const [typingIndex, setTypingIndex] = useState(-1)
 
   useEffect(() => {
+    let cancelled = false
+    const timeouts = []
+
+    setVisibleMessages([])
+    setTypingIndex(-1)
+
     CHAT_MESSAGES.forEach((msg, i) => {
-      setTimeout(() => {
-        if (i > 0) setTypingIndex(i)
-        setTimeout(() => {
+      const t1 = setTimeout(() => {
+        if (!cancelled) setTypingIndex(i)
+      }, msg.delay)
+      timeouts.push(t1)
+
+      const t2 = setTimeout(() => {
+        if (!cancelled) {
           setVisibleMessages(prev => [...prev, msg])
           setTypingIndex(-1)
-        }, 800)
-      }, msg.delay)
+        }
+      }, msg.delay + 800)
+      timeouts.push(t2)
     })
+
+    return () => {
+      cancelled = true
+      timeouts.forEach(clearTimeout)
+    }
   }, [])
 
   return (

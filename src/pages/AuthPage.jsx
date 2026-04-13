@@ -10,12 +10,32 @@ export default function AuthPage() {
   const [mode, setMode] = useState(initialMode)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: ''
+  })
+
+  const handleChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.id.replace('auth-', '')]: e.target.value
+    }))
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
     setLoading(true)
-    // Simulate auth
+    
+    // Simulate auth & save to localStorage
     setTimeout(() => {
+      const user = {
+        name: mode === 'register' ? formData.name : formData.email.split('@')[0],
+        email: formData.email,
+        id: formData.email // Using email as simplified userId for now
+      }
+      localStorage.setItem('weberganize_user', JSON.stringify(user))
+      
       setLoading(false)
       navigate('/dashboard')
     }, 1500)
@@ -69,6 +89,8 @@ export default function AuthPage() {
                     type="text"
                     id="auth-name"
                     placeholder="Nama kamu"
+                    value={formData.name}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -83,6 +105,8 @@ export default function AuthPage() {
                   type="text"
                   id="auth-email"
                   placeholder="email@contoh.com atau 08xxx"
+                  value={formData.email}
+                  onChange={handleChange}
                   required
                 />
               </div>
@@ -101,6 +125,8 @@ export default function AuthPage() {
                   type={showPassword ? 'text' : 'password'}
                   id="auth-password"
                   placeholder="Min. 8 karakter"
+                  value={formData.password}
+                  onChange={handleChange}
                   required
                 />
                 <button

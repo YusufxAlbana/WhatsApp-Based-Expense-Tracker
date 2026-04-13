@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Zap, LayoutDashboard, Receipt, PieChart as PieChartIcon,
   TrendingUp, Bell, Settings, LogOut, Search, Plus,
@@ -13,15 +13,16 @@ import {
 } from 'recharts'
 import {
   MOCK_EXPENSES, DAILY_DATA, CATEGORIES,
-  getCategoryData, formatRupiah, getRelativeTime
+  getCategoryData as getMockCategoryData, formatRupiah, getRelativeTime
 } from '../data/mockData.js'
+import { 
+  sendToGoogleSheets, 
+  getExpensesFromSheets, 
+  getCategoryData as aggregateCategoryData 
+} from '../services/googleSheets.js'
 import './Dashboard.css'
 
-const CATEGORY_PIE = getCategoryData(MOCK_EXPENSES)
-const TOTAL_THIS_MONTH = MOCK_EXPENSES.reduce((s, e) => s + e.amount, 0)
-const TOTAL_ITEMS = MOCK_EXPENSES.length
-const AVG_PER_DAY = Math.round(TOTAL_THIS_MONTH / 10)
-const TOP_CATEGORY = CATEGORY_PIE.reduce((a, b) => a.value > b.value ? a : b)
+// Constants removed here as they are now handled inside the Dashboard component state
 
 const SIDEBAR_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard', active: true },
@@ -53,9 +54,102 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [timeFilter, setTimeFilter] = useState('Bulan Ini')
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncStatus, setSyncStatus] = useState(null)
+  
+  // User state from localStorage
+  const [user, setUser] = useState(null)
+  const [expenses, setExpenses] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('weberganize_user')
+    if (!savedUser) {
+      navigate('/auth')
+    } else {
+      setUser(JSON.parse(savedUser))
+    }
+  }, [navigate])
+
+  // Fetch data from Sheets using userId
+  const refreshData = async () => {
+    if (!user?.id) return
+    setIsLoading(true)
+    const data = await getExpensesFromSheets(user.id)
+    if (data && data.length > 0) {
+      setExpenses(data)
+    } else {
+      setExpenses([]) // No fallback to mock for logged in user to avoid confusion
+    }
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    if (user) {
+      refreshData()
+    }
+  }, [user])
+
+  const handleLogout = () => {
+    localStorage.removeItem('weberganize_user')
+    navigate('/')
+  }
+
+  // Recalculate stats based on current expenses
+  const currentExpenses = expenses.length > 0 ? expenses : MOCK_EXPENSES
+  
+  // Use the new aggregator from Sheets service
+  const aggregatedData = aggregateCategoryData(currentExpenses)
+  
+  // Enrich with icons and colors for UI
+  const categoryPieData = aggregatedData.map(item => {
+    const registry = CATEGORIES.find(c => c.label.toLowerCase() === item.name.toLowerCase() || c.key === item.name.toLowerCase())
+    return {
+      ...item,
+      color: registry?.color || '#888',
+      icon: registry?.icon || '💰'
+    }
+  })
+
+  const totalThisMonth = currentExpenses.reduce((s, e) => s + Number(e.amount), 0)
+  const totalItems = currentExpenses.length
+  const avgPerDay = Math.round(totalThisMonth / 30)
+  const topCategory = categoryPieData.length > 0 
+    ? categoryPieData.reduce((a, b) => a.value > b.value ? a : b)
+    : { name: 'None', icon: '❓', color: '#ccc', value: 0 }
+
+  const handleAddMockExpense = async () => {
+    setIsSyncing(true)
+    setSyncStatus(null)
+    
+    const mockAiData = {
+      userId: user.id, // Include userId in data
+      item: "Kopi Gula Aren",
+      amount: 18000,
+      category: "Makanan"
+    }
+
+    try {
+      const success = await sendToGoogleSheets(mockAiData)
+      if (success) {
+        setSyncStatus('success')
+        refreshData() // Refresh data after adding
+        setTimeout(() => setSyncStatus(null), 3000)
+      } else {
+        setSyncStatus('error')
+        setTimeout(() => setSyncStatus(null), 3000)
+      }
+    } catch (err) {
+      setSyncStatus('error')
+      setTimeout(() => setSyncStatus(null), 3000)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   return (
     <div className="dashboard-layout">
@@ -84,15 +178,15 @@ export default function Dashboard() {
 
         <div className="sidebar__bottom">
           <div className="sidebar__user">
-            <div className="sidebar__user-avatar">R</div>
+            <div className="sidebar__user-avatar">{user?.name?.[0] || 'U'}</div>
             {sidebarOpen && (
               <div className="sidebar__user-info">
-                <span className="sidebar__user-name">Rizky</span>
+                <span className="sidebar__user-name">{user?.name || 'User'}</span>
                 <span className="sidebar__user-plan">Plan: Gratis</span>
               </div>
             )}
           </div>
-          <button className="sidebar__item sidebar__logout" id="sidebar-logout">
+          <button className="sidebar__item sidebar__logout" id="sidebar-logout" onClick={handleLogout}>
             <LogOut size={20} />
             {sidebarOpen && <span>Keluar</span>}
           </button>
@@ -105,7 +199,7 @@ export default function Dashboard() {
         <header className="dashboard-topbar">
           <div className="dashboard-topbar__left">
             <h1 className="dashboard-topbar__title">Dashboard</h1>
-            <p className="dashboard-topbar__subtitle">Selamat datang kembali, Rizky 👋</p>
+            <p className="dashboard-topbar__subtitle">Selamat datang kembali, {user?.name || 'User'} 👋</p>
           </div>
           <div className="dashboard-topbar__right">
             <div className="dashboard-topbar__search">
@@ -117,12 +211,33 @@ export default function Dashboard() {
               {timeFilter}
               <ChevronDown size={14} />
             </button>
-            <button className="btn-primary dashboard-topbar__add" id="dashboard-add-btn">
-              <Plus size={18} />
-              <span>Tambah Manual</span>
+            <button 
+              className={`btn-primary dashboard-topbar__add ${isSyncing ? 'btn--loading' : ''}`} 
+              id="dashboard-add-btn"
+              onClick={handleAddMockExpense}
+              disabled={isSyncing || !user}
+            >
+              {isSyncing ? (
+                <div className="spinner"></div>
+              ) : (
+                <>
+                  <Plus size={18} />
+                  <span>Test Sync ke Sheets</span>
+                </>
+              )}
             </button>
           </div>
         </header>
+
+        {syncStatus && (
+          <div className={`sync-toast sync-toast--${syncStatus} animate-fade-in`}>
+            {syncStatus === 'success' ? (
+              <><Zap size={16} /> Data berhasil dikirim ke Google Sheets!</>
+            ) : (
+              <>⚠️ Gagal mengirim data ke Sheets.</>
+            )}
+          </div>
+        )}
 
         {/* Stat Cards */}
         <div className="stat-cards stagger-children">
@@ -133,7 +248,7 @@ export default function Dashboard() {
                 <Wallet size={18} />
               </div>
             </div>
-            <div className="stat-card__value">{formatRupiah(TOTAL_THIS_MONTH)}</div>
+            <div className="stat-card__value">{isLoading ? '...' : formatRupiah(totalThisMonth)}</div>
             <div className="stat-card__change stat-card__change--down">
               <ArrowUpRight size={14} />
               <span>+12% dari bulan lalu</span>
@@ -147,7 +262,7 @@ export default function Dashboard() {
                 <TrendingUp size={18} />
               </div>
             </div>
-            <div className="stat-card__value">{formatRupiah(AVG_PER_DAY)}</div>
+            <div className="stat-card__value">{isLoading ? '...' : formatRupiah(avgPerDay)}</div>
             <div className="stat-card__change stat-card__change--up">
               <ArrowDownRight size={14} />
               <span>-5% dari minggu lalu</span>
@@ -161,7 +276,7 @@ export default function Dashboard() {
                 <Receipt size={18} />
               </div>
             </div>
-            <div className="stat-card__value">{TOTAL_ITEMS}</div>
+            <div className="stat-card__value">{isLoading ? '...' : totalItems}</div>
             <div className="stat-card__change stat-card__change--neutral">
               <span>Bulan ini</span>
             </div>
@@ -174,9 +289,9 @@ export default function Dashboard() {
                 <PieChartIcon size={18} />
               </div>
             </div>
-            <div className="stat-card__value">{TOP_CATEGORY.icon} {TOP_CATEGORY.name}</div>
+            <div className="stat-card__value">{isLoading ? '...' : `${topCategory.icon} ${topCategory.name}`}</div>
             <div className="stat-card__change stat-card__change--neutral">
-              <span>{formatRupiah(TOP_CATEGORY.value)}</span>
+              <span>{isLoading ? '...' : formatRupiah(topCategory.value)}</span>
             </div>
           </div>
         </div>
@@ -239,7 +354,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
-                    data={CATEGORY_PIE}
+                    data={categoryPieData}
                     cx="50%"
                     cy="50%"
                     innerRadius={65}
@@ -248,7 +363,7 @@ export default function Dashboard() {
                     dataKey="value"
                     stroke="none"
                   >
-                    {CATEGORY_PIE.map((entry, i) => (
+                    {categoryPieData.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
@@ -265,7 +380,7 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="pie-legend">
-                {CATEGORY_PIE.map((item, i) => (
+                {categoryPieData.map((item, i) => (
                   <div key={i} className="pie-legend__item">
                     <span className="pie-legend__dot" style={{ background: item.color }}></span>
                     <span className="pie-legend__label">{item.icon} {item.name}</span>
@@ -325,20 +440,20 @@ export default function Dashboard() {
               <button className="chart-filter" id="view-all-transactions">Lihat Semua</button>
             </div>
             <div className="recent-list">
-              {MOCK_EXPENSES.slice(0, 8).map((expense) => {
-                const cat = CATEGORIES.find(c => c.key === expense.category)
+              {currentExpenses.slice(0, 8).map((expense, idx) => {
+                const cat = CATEGORIES.find(c => c.key === expense.category || c.label === expense.category)
                 return (
-                  <div key={expense.id} className="recent-item">
-                    <div className="recent-item__icon" style={{ background: `${cat?.color}18`, color: cat?.color }}>
-                      {cat?.icon}
+                  <div key={expense.id || idx} className="recent-item">
+                    <div className="recent-item__icon" style={{ background: `${cat?.color || '#333'}18`, color: cat?.color || '#888' }}>
+                      {cat?.icon || '💰'}
                     </div>
                     <div className="recent-item__info">
                       <span className="recent-item__name">{expense.item}</span>
-                      <span className="recent-item__time">{getRelativeTime(expense.created_at)}</span>
+                      <span className="recent-item__time">{(expense.tanggal || expense.created_at) ? getRelativeTime(expense.tanggal || expense.created_at) : 'Baru saja'}</span>
                     </div>
                     <div className="recent-item__amount">
                       <span>-{formatRupiah(expense.amount)}</span>
-                      <span className="recent-item__cat" style={{ color: cat?.color }}>{cat?.label}</span>
+                      <span className="recent-item__cat" style={{ color: cat?.color || '#888' }}>{cat?.label || expense.category}</span>
                     </div>
                   </div>
                 )

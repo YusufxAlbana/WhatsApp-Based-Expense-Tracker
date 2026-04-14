@@ -4,7 +4,7 @@ import {
   Zap, Receipt, PieChart as PieChartIcon,
   Search, RefreshCw, Inbox, Edit3, Trash2,
   Check, X, SlidersHorizontal, ArrowUpDown,
-  ChevronLeft, ChevronRight, Wallet, MessageSquare
+  ChevronLeft, ChevronRight, Wallet, MessageSquare, Package
 } from 'lucide-react'
 import {
   CATEGORIES, formatRupiah, getRelativeTime
@@ -412,7 +412,7 @@ export default function TransactionHistory() {
                             ) : (
                               <div className="txn-item-cell">
                                 <div className="txn-item-icon" style={{ background: `${cat?.color || '#333'}18`, color: cat?.color || '#888' }}>
-                                  {cat?.icon || '💰'}
+                                  {cat?.icon || <Wallet size={16} />}
                                 </div>
                                 <span className="txn-item-name">{expense.item}</span>
                               </div>
@@ -427,12 +427,13 @@ export default function TransactionHistory() {
                                 onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                               >
                                 {CATEGORIES.map(c => (
-                                  <option key={c.key} value={c.label}>{c.icon} {c.label}</option>
+                                  <option key={c.key} value={c.label}>{c.label}</option>
                                 ))}
                               </select>
                             ) : (
                               <span className="txn-category-badge" style={{ background: `${cat?.color || '#555'}18`, color: cat?.color || '#888' }}>
-                                {cat?.icon || '📦'} {expense.category}
+                                <span style={{ display: 'inline-flex', alignItems: 'center' }}>{cat?.icon || <Package size={14}/>}</span> 
+                                <span style={{ marginLeft: '4px' }}>{expense.category}</span>
                               </span>
                             )}
                           </td>

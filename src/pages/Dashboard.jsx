@@ -386,7 +386,9 @@ export default function Dashboard() {
           {/* Budget Progress */}
           <div className="budget-card glass-card">
             <div className="chart-card__header">
-              <h3>🎯 Budget Tracker</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Target size={18} className="text-brand" /> Budget Tracker
+              </h3>
             </div>
             <div className="budget-list">
               {!hasData || budgetData.length === 0 ? (
@@ -402,7 +404,9 @@ export default function Dashboard() {
                   return (
                     <div key={i} className="budget-item">
                       <div className="budget-item__header">
-                        <span className="budget-item__name">{item.icon} {item.category}</span>
+                        <span className="budget-item__name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ display: 'flex', color: item.color }}>{item.icon}</span> {item.category}
+                        </span>
                         <span className={`budget-item__pct ${isOver ? 'budget-item__pct--warn' : ''}`}>
                           {pct}%
                         </span>
@@ -432,7 +436,9 @@ export default function Dashboard() {
           {/* Recent Transactions */}
           <div className="recent-card glass-card">
             <div className="chart-card__header">
-              <h3>📝 Transaksi Terbaru</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Receipt size={18} className="text-brand" /> Transaksi Terbaru
+              </h3>
               {hasData && (
                 <button className="chart-filter" id="view-all-transactions" onClick={() => navigate('/transactions')}>Lihat Semua</button>
               )}
@@ -450,7 +456,7 @@ export default function Dashboard() {
                   return (
                     <div key={idx} className="recent-item">
                       <div className="recent-item__icon" style={{ background: `${cat?.color || '#333'}18`, color: cat?.color || '#888' }}>
-                        {cat?.icon || '💰'}
+                        {cat?.icon || <Wallet size={16} />}
                       </div>
                       <div className="recent-item__info">
                         <span className="recent-item__name">{expense.item}</span>
@@ -474,7 +480,7 @@ export default function Dashboard() {
             <MessageSquare size={24} />
           </div>
           <div className="wa-recap__content">
-            <h4>💬 Status WhatsApp Bot</h4>
+            <h4>Status WhatsApp Bot</h4>
             {lastExpense ? (
               <p>Terakhir tercatat: <strong>{lastExpense.item} {formatRupiah(lastExpense.amount)}</strong> — {(lastExpense.tanggal || lastExpense.created_at) ? getRelativeTime(lastExpense.tanggal || lastExpense.created_at) : 'Baru saja'}. Bot Weberganize aktif dan menunggu pesan berikutnya.</p>
             ) : (

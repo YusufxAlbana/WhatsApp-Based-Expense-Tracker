@@ -106,7 +106,7 @@ export default function Budgets() {
   const EMPTY_FORM = {
     category: '', limit: '', threshold: 80,
     cycle: 'Bulanan', priority: 'Wajib',
-    rollover: false, icon: '💰', color: '#25D366', notes: ''
+    rollover: false, color: '#25D366', notes: ''
   }
   const [form, setForm] = useState(EMPTY_FORM)
 
@@ -211,7 +211,10 @@ export default function Budgets() {
         {/* ── Top Bar ── */}
         <header className="dashboard-topbar">
           <div className="dashboard-topbar__left">
-            <h1 className="dashboard-topbar__title">🎯 Kelola Anggaran</h1>
+            <h1 className="dashboard-topbar__title">
+               <Target size={26} className="text-brand mr-sm" style={{ marginRight: '8px' }} />
+               Kelola Anggaran
+            </h1>
             <p className="dashboard-topbar__subtitle">Pantau batas pengeluaran per kategori secara real-time</p>
           </div>
           <div className="dashboard-topbar__right">
@@ -261,10 +264,10 @@ export default function Budgets() {
                 <div className="insight-body">
                   <h4 className="insight-title">
                     {overBudgetCount > 0
-                      ? `⚠️ ${overBudgetCount} kategori melebihi batas!`
+                      ? `${overBudgetCount} kategori melebihi batas!`
                       : overallPct > 80
                       ? 'Waspada – Hampir Habis'
-                      : 'Dompet Sehat 🎉'}
+                      : 'Kesehatan Dompet Terjaga'}
                   </h4>
                   <p className="insight-desc">
                     {overBudgetCount > 0
@@ -318,7 +321,7 @@ export default function Budgets() {
                       className="cat-icon-container"
                       style={{ backgroundColor: `${b.color}20`, color: b.color }}
                     >
-                      {b.icon}
+                      <Wallet size={20} />
                     </div>
                     <div>
                       <h3 className="cat-name">{b.category}</h3>
@@ -398,27 +401,22 @@ export default function Budgets() {
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content glass-card card-xl" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingBudget ? '✏️ Edit Anggaran' : '➕ Anggaran Baru'}</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {editingBudget ? <Edit3 size={20} /> : <Plus size={20} />} 
+                {editingBudget ? 'Edit Anggaran' : 'Anggaran Baru'}
+              </h3>
               <button className="modal-close-btn" onClick={closeModal}><X size={20} /></button>
             </div>
 
             <form onSubmit={handleSave} className="modal-form">
               <div className="form-row grid-2">
-                <div className="form-group">
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label>Nama Kategori *</label>
                   <input
                     required
                     placeholder="Misal: Makan Siang"
                     value={form.category}
                     onChange={e => setForm({ ...form, category: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Ikon Emoji</label>
-                  <input
-                    placeholder="Misal: 🍔"
-                    value={form.icon}
-                    onChange={e => setForm({ ...form, icon: e.target.value })}
                   />
                 </div>
               </div>

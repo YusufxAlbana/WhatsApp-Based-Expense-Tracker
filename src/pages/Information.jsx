@@ -46,8 +46,9 @@ export default function Information() {
           <p><strong>Bagaimana cara kerjanya?</strong></p>
           <p>Fitur "Rollover Sisa" memungkinkan Anda membawa sisa uang saku/anggaran bulan ini ke bulan berikutnya. Jika Anda berhemat bulan ini, bulan depan budget Anda akan otomatis bertambah!</p>
           <div className="info-example">
-            <p className="example-title">💡 Contoh Kasus:</p>
-            <p>Batas Anggaran Makanan: <strong>Rp 1.000.000</strong></p>
+            <p className="example-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Info size={16} /> Contoh Kasus:
+            </p>
             <p>Pengeluaran bulan ini: <strong>Rp 800.000</strong></p>
             <p>Sisa: <strong>Rp 200.000</strong></p>
             <p className="example-res">➔ Pada bulan depan, batas anggaran Anda otomatis menjadi <strong>Rp 1.200.000</strong> (Rp 1 Juta + Rp 200 Ribu sisa).</p>
@@ -119,7 +120,9 @@ export default function Information() {
         {/* Top Bar */}
         <header className="dashboard-topbar">
           <div className="dashboard-topbar__left">
-            <h1 className="dashboard-topbar__title">ℹ️ Pusat Informasi & Bantuan</h1>
+            <h1 className="dashboard-topbar__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <Info size={26} className="text-brand" /> Pusat Informasi & Bantuan
+            </h1>
             <p className="dashboard-topbar__subtitle">Pelajari fitur-fitur Weberganize dan cara menggunakannya dengan maksimal.</p>
           </div>
         </header>

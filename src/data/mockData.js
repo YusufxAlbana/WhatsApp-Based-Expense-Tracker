@@ -1,16 +1,19 @@
 // Utility data and functions for the Weberganize app
 // NO MOCK DATA — all transaction data comes from Google Sheets
 
+import React from 'react'
+import { Pizza, CarFront, Gamepad2, ShoppingBag, HeartPulse, FileText, GraduationCap, Home, Package } from 'lucide-react'
+
 export const CATEGORIES = [
-  { key: 'makanan', label: 'Makanan', color: '#f97316', icon: '🍔' },
-  { key: 'transportasi', label: 'Transportasi', color: '#3b82f6', icon: '🚗' },
-  { key: 'hiburan', label: 'Hiburan', color: '#ec4899', icon: '🎮' },
-  { key: 'belanja', label: 'Belanja', color: '#a855f7', icon: '🛍️' },
-  { key: 'kesehatan', label: 'Kesehatan', color: '#10b981', icon: '💊' },
-  { key: 'tagihan', label: 'Tagihan', color: '#eab308', icon: '📄' },
-  { key: 'pendidikan', label: 'Pendidikan', color: '#06b6d4', icon: '📚' },
-  { key: 'kebutuhan', label: 'Kebutuhan', color: '#8b5cf6', icon: '🏠' },
-  { key: 'lainnya', label: 'Lainnya', color: '#6b7280', icon: '📦' },
+  { key: 'makanan', label: 'Makanan', color: '#f97316', icon: React.createElement(Pizza, { size: 18 }) },
+  { key: 'transportasi', label: 'Transportasi', color: '#3b82f6', icon: React.createElement(CarFront, { size: 18 }) },
+  { key: 'hiburan', label: 'Hiburan', color: '#ec4899', icon: React.createElement(Gamepad2, { size: 18 }) },
+  { key: 'belanja', label: 'Belanja', color: '#a855f7', icon: React.createElement(ShoppingBag, { size: 18 }) },
+  { key: 'kesehatan', label: 'Kesehatan', color: '#10b981', icon: React.createElement(HeartPulse, { size: 18 }) },
+  { key: 'tagihan', label: 'Tagihan', color: '#eab308', icon: React.createElement(FileText, { size: 18 }) },
+  { key: 'pendidikan', label: 'Pendidikan', color: '#06b6d4', icon: React.createElement(GraduationCap, { size: 18 }) },
+  { key: 'kebutuhan', label: 'Kebutuhan', color: '#8b5cf6', icon: React.createElement(Home, { size: 18 }) },
+  { key: 'lainnya', label: 'Lainnya', color: '#6b7280', icon: React.createElement(Package, { size: 18 }) },
 ]
 
 export function formatRupiah(amount) {

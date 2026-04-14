@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import {
   Zap, LayoutDashboard, Receipt, PieChart as PieChartIcon,
-  Target, MessageSquare, Bell, Settings, LogOut
+  Target, MessageSquare, Bell, Settings, LogOut, HelpCircle
 } from 'lucide-react'
 import './Sidebar.css'
 
@@ -10,6 +10,7 @@ const SIDEBAR_ITEMS = [
   { icon: Receipt,         label: 'Transaksi',   key: 'transactions',  path: '/transactions' },
   { icon: PieChartIcon,    label: 'Analitik',    key: 'analytics',     path: '/analytics' },
   { icon: Target,          label: 'Budget',      key: 'budget',        path: '/budget' },
+  { icon: HelpCircle,      label: 'Informasi',   key: 'info',          path: '/info' },
   { icon: MessageSquare,   label: 'WhatsApp',    key: 'whatsapp',      path: null }, // belum tersedia
   { icon: Bell,            label: 'Notifikasi',  key: 'notifications', path: null }, // belum tersedia
   { icon: Settings,        label: 'Pengaturan',  key: 'settings',      path: '/settings' },

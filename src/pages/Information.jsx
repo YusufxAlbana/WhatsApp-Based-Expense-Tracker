@@ -1,0 +1,194 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  HelpCircle, Info, Target, Repeat, BellRing,
+  Wallet, PieChart as PieChartIcon, Zap, Smartphone,
+  ChevronDown, ChevronUp, FileText, Lock
+} from 'lucide-react'
+import Sidebar from '../components/Sidebar'
+import './Dashboard.css'
+import './Information.css'
+
+export default function Information() {
+  const navigate = useNavigate()
+  const [sidebarOpen] = useState(true)
+  const [user, setUser] = useState(null)
+  
+  const [expandedId, setExpandedId] = useState('rollover') // default open
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('weberganize_user')
+    if (!savedUser) {
+      navigate('/auth')
+    } else {
+      setUser(JSON.parse(savedUser))
+    }
+  }, [navigate])
+
+  const handleLogout = () => {
+    localStorage.removeItem('weberganize_user')
+    navigate('/')
+  }
+
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id)
+  }
+
+  const features = [
+    {
+      id: 'rollover',
+      title: 'Rollover Sisa (Akumulasi Budget)',
+      icon: <Repeat size={20} />,
+      color: 'var(--brand-primary)',
+      badge: 'Paling Ditanyakan',
+      content: (
+        <>
+          <p><strong>Bagaimana cara kerjanya?</strong></p>
+          <p>Fitur "Rollover Sisa" memungkinkan Anda membawa sisa uang saku/anggaran bulan ini ke bulan berikutnya. Jika Anda berhemat bulan ini, bulan depan budget Anda akan otomatis bertambah!</p>
+          <div className="info-example">
+            <p className="example-title">💡 Contoh Kasus:</p>
+            <p>Batas Anggaran Makanan: <strong>Rp 1.000.000</strong></p>
+            <p>Pengeluaran bulan ini: <strong>Rp 800.000</strong></p>
+            <p>Sisa: <strong>Rp 200.000</strong></p>
+            <p className="example-res">➔ Pada bulan depan, batas anggaran Anda otomatis menjadi <strong>Rp 1.200.000</strong> (Rp 1 Juta + Rp 200 Ribu sisa).</p>
+          </div>
+        </>
+      )
+    },
+    {
+      id: 'threshold',
+      title: 'Ambang Batas Peringatan (%)',
+      icon: <BellRing size={20} />,
+      color: '#f59e0b',
+      content: (
+        <>
+          <p>Saat Anda membuat atau mengedit anggaran, Anda dapat mengatur nilai "Ambang Batas Peringatan". Ini adalah titik persentase di mana sistem akan mulai memberikan label kuning (Waspada) pada pengeluaran Anda.</p>
+          <ul>
+            <li>Jika diatur ke <strong>80%</strong>, maka ketika pengeluaran Anda mencapai 80% dari batas (misal: 800rb dari 1jt), bar indikator akan berubah warna menjadi kuning.</li>
+            <li>Jika melebihi 100%, sistem akan memberikan peringatan merah (Kritis).</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: 'integration',
+      title: 'Integrasi WhatsApp Bot & Google Sheets',
+      icon: <Smartphone size={20} />,
+      color: '#3b82f6',
+      content: (
+        <>
+          <p>Weberganize sangat unik karena Anda tidak harus selalu membuka website untuk mencatat pengeluaran. Anda bisa mengirim chat langsung ke Bot WhatsApp Weberganize.</p>
+          <ul>
+            <li><strong>Mencatat Cepat:</strong> Cukup kirim chat "Makan siang 50000" dan bot akan otomatis mendeteksi kategori, nominal, dan mencatatnya.</li>
+            <li><strong>Google Sheets:</strong> Semua data Anda aman disimpan di Google Sheets Anda sendiri, bukan di server kami. Anda memegang kendali penuh atas data transaksi Anda.</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      id: 'analytics',
+      title: 'Analitik & Pengelompokan Kategori',
+      icon: <PieChartIcon size={20} />,
+      color: '#8b5cf6',
+      content: (
+        <>
+          <p>Di halaman <strong>Analitik</strong>, aplikasi akan secara otomatis mengelompokkan riwayat belanja Anda berdasarkan kategorinya (Makanan, Transportasi, Hiburan, dll).</p>
+          <p>Jika ada entri dari WhatsApp yang kategorinya tidak dikenali, sistem akan memasukkannya ke kategori <strong>"Lainnya"</strong> otomatis, dan Anda dapat mengeditnya kapan saja di halaman Transaksi.</p>
+        </>
+      )
+    },
+    {
+      id: 'privacy',
+      title: 'Privasi & Keamanan Data (CORS)',
+      icon: <Lock size={20} />,
+      color: '#ef4444',
+      content: (
+        <>
+          <p>Sistem frontend website kami melakukan request langsung ke URL Google Apps Script Anda (tidak melalui server pihak ketiga). Kami menggunakan teknik <strong>JSONP (Script Injection)</strong> agar browser Anda tidak terhalang oleh pembatasan *CORS (Cross-Origin Resource Sharing)*.</p>
+          <p>Oleh karena itu, sangat penting bagi URL Endpoint Apps Script (doGet/doPost) Anda siap menerima mode JSONP agar data tampil dengan sempurna di Dashboard dan riwayat Transaksi.</p>
+        </>
+      )
+    }
+  ]
+
+  return (
+    <div className="dashboard-layout">
+      <Sidebar isOpen={sidebarOpen} user={user} onLogout={handleLogout} />
+
+      <main className="dashboard-main info-main">
+        {/* Top Bar */}
+        <header className="dashboard-topbar">
+          <div className="dashboard-topbar__left">
+            <h1 className="dashboard-topbar__title">ℹ️ Pusat Informasi & Bantuan</h1>
+            <p className="dashboard-topbar__subtitle">Pelajari fitur-fitur Weberganize dan cara menggunakannya dengan maksimal.</p>
+          </div>
+        </header>
+
+        <div className="info-container mt-xl">
+          {/* Intro Card */}
+          <section className="glass-card info-intro animate-fade-in">
+            <div className="info-intro-header">
+              <div className="intro-icon bg-brand-light">
+                <Zap size={28} className="text-brand" />
+              </div>
+              <div>
+                <h2>Selamat datang di Panduan Weberganize</h2>
+                <p>Aplikasi pintar yang memadukan fleksibilitas Google Sheets dengan kecepatan WhatsApp Bot. Temukan semua penjelasan fitur di bawah ini.</p>
+              </div>
+            </div>
+            
+            <div className="intro-stats">
+              <div className="i-stat">
+                <h3>4+</h3>
+                <span>Fitur Inti</span>
+              </div>
+              <div className="i-stat">
+                <h3>100%</h3>
+                <span>Aman (Sheets)</span>
+              </div>
+              <div className="i-stat">
+                <h3>Realtime</h3>
+                <span>Sync</span>
+              </div>
+            </div>
+          </section>
+
+          {/* FAQ Accordion */}
+          <section className="info-accordion-list mt-xl animate-slide-up">
+            <h3 className="section-title"><HelpCircle size={20}/> Penjelasan Detail Fitur</h3>
+            
+            {features.map((feat) => {
+              const isExpanded = expandedId === feat.id
+              return (
+                <div key={feat.id} className={`info-accordion-item glass-card ${isExpanded ? 'expanded' : ''}`}>
+                  <button 
+                    className="accordion-trigger" 
+                    onClick={() => toggleExpand(feat.id)}
+                  >
+                    <div className="acc-left">
+                      <div className="acc-icon" style={{ backgroundColor: `${feat.color}15`, color: feat.color }}>
+                        {feat.icon}
+                      </div>
+                      <h4 className="acc-title">{feat.title}</h4>
+                      {feat.badge && <span className="acc-badge">{feat.badge}</span>}
+                    </div>
+                    <div className="acc-right">
+                      {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </div>
+                  </button>
+
+                  <div className={`accordion-body-wrapper ${isExpanded ? 'open' : ''}`}>
+                    <div className="accordion-body-content">
+                      {feat.content}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </section>
+
+        </div>
+      </main>
+    </div>
+  )
+}

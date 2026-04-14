@@ -4,16 +4,16 @@ import {
   Zap, LayoutDashboard, Receipt, PieChart as PieChartIcon,
   TrendingUp, Bell, Settings, LogOut, Search, Plus,
   ArrowUpRight, ArrowDownRight, Calendar, Filter,
-  ChevronDown, Wallet, Target, MessageSquare, Download
+  ChevronDown, Wallet, Target, MessageSquare, Download,
+  RefreshCw, Inbox
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
-  Legend
+  ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts'
 import {
-  MOCK_EXPENSES, DAILY_DATA, CATEGORIES,
-  getCategoryData as getMockCategoryData, formatRupiah, getRelativeTime
+  CATEGORIES, formatRupiah, getRelativeTime,
+  getDailyTrendData, getBudgetFromExpenses
 } from '../data/mockData.js'
 import { 
   sendToGoogleSheets, 
@@ -22,23 +22,14 @@ import {
 } from '../services/googleSheets.js'
 import './Dashboard.css'
 
-// Constants removed here as they are now handled inside the Dashboard component state
-
 const SIDEBAR_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard', active: true },
+  { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard' },
   { icon: Receipt, label: 'Transaksi', key: 'transactions' },
   { icon: PieChartIcon, label: 'Analitik', key: 'analytics' },
   { icon: Target, label: 'Budget', key: 'budget' },
   { icon: MessageSquare, label: 'WhatsApp', key: 'whatsapp' },
   { icon: Bell, label: 'Notifikasi', key: 'notifications' },
   { icon: Settings, label: 'Pengaturan', key: 'settings' },
-]
-
-const BUDGET_DATA = [
-  { category: 'Makanan', spent: 110000, limit: 500000, color: '#f97316', icon: '🍔' },
-  { category: 'Transportasi', spent: 78000, limit: 300000, color: '#3b82f6', icon: '🚗' },
-  { category: 'Hiburan', spent: 158990, limit: 200000, color: '#ec4899', icon: '🎮' },
-  { category: 'Tagihan', spent: 654990, limit: 800000, color: '#eab308', icon: '📄' },
 ]
 
 function CustomTooltip({ active, payload, label }) {
@@ -51,6 +42,18 @@ function CustomTooltip({ active, payload, label }) {
     )
   }
   return null
+}
+
+function EmptyState({ icon: Icon, title, description }) {
+  return (
+    <div className="empty-state">
+      <div className="empty-state__icon">
+        <Icon size={40} />
+      </div>
+      <h3 className="empty-state__title">{title}</h3>
+      <p className="empty-state__desc">{description}</p>
+    </div>
+  )
 }
 
 export default function Dashboard() {
@@ -83,7 +86,7 @@ export default function Dashboard() {
     if (data && data.length > 0) {
       setExpenses(data)
     } else {
-      setExpenses([]) // No fallback to mock for logged in user to avoid confusion
+      setExpenses([])
     }
     setIsLoading(false)
   }
@@ -99,15 +102,16 @@ export default function Dashboard() {
     navigate('/')
   }
 
-  // Recalculate stats based on current expenses
-  const currentExpenses = expenses.length > 0 ? expenses : MOCK_EXPENSES
-  
-  // Use the new aggregator from Sheets service
-  const aggregatedData = aggregateCategoryData(currentExpenses)
-  
-  // Enrich with icons and colors for UI
+  // --- ALL COMPUTED DATA FROM REAL EXPENSES ---
+  const hasData = expenses.length > 0
+
+  // Category aggregation
+  const aggregatedData = aggregateCategoryData(expenses)
   const categoryPieData = aggregatedData.map(item => {
-    const registry = CATEGORIES.find(c => c.label.toLowerCase() === item.name.toLowerCase() || c.key === item.name.toLowerCase())
+    const registry = CATEGORIES.find(c =>
+      c.label.toLowerCase() === item.name.toLowerCase() ||
+      c.key === item.name.toLowerCase()
+    )
     return {
       ...item,
       color: registry?.color || '#888',
@@ -115,34 +119,31 @@ export default function Dashboard() {
     }
   })
 
-  const totalThisMonth = currentExpenses.reduce((s, e) => s + Number(e.amount), 0)
-  const totalItems = currentExpenses.length
-  const avgPerDay = Math.round(totalThisMonth / 30)
+  // Stats
+  const totalThisMonth = expenses.reduce((s, e) => s + Number(e.amount), 0)
+  const totalItems = expenses.length
+  const avgPerDay = totalItems > 0 ? Math.round(totalThisMonth / 30) : 0
   const topCategory = categoryPieData.length > 0 
     ? categoryPieData.reduce((a, b) => a.value > b.value ? a : b)
-    : { name: 'None', icon: '❓', color: '#ccc', value: 0 }
+    : { name: '-', icon: '📊', color: '#555', value: 0 }
 
-  const handleAddMockExpense = async () => {
+  // Trend chart data from REAL expenses
+  const dailyTrendData = getDailyTrendData(expenses)
+
+  // Budget from REAL expenses
+  const budgetData = getBudgetFromExpenses(expenses)
+
+  // Last transaction for WhatsApp recap
+  const lastExpense = expenses.length > 0 ? expenses[expenses.length - 1] : null
+
+  // Manual add handler
+  const handleRefreshSync = async () => {
     setIsSyncing(true)
     setSyncStatus(null)
-    
-    const mockAiData = {
-      userId: user.id, // Include userId in data
-      item: "Kopi Gula Aren",
-      amount: 18000,
-      category: "Makanan"
-    }
-
     try {
-      const success = await sendToGoogleSheets(mockAiData)
-      if (success) {
-        setSyncStatus('success')
-        refreshData() // Refresh data after adding
-        setTimeout(() => setSyncStatus(null), 3000)
-      } else {
-        setSyncStatus('error')
-        setTimeout(() => setSyncStatus(null), 3000)
-      }
+      await refreshData()
+      setSyncStatus('success')
+      setTimeout(() => setSyncStatus(null), 3000)
     } catch (err) {
       setSyncStatus('error')
       setTimeout(() => setSyncStatus(null), 3000)
@@ -213,16 +214,16 @@ export default function Dashboard() {
             </button>
             <button 
               className={`btn-primary dashboard-topbar__add ${isSyncing ? 'btn--loading' : ''}`} 
-              id="dashboard-add-btn"
-              onClick={handleAddMockExpense}
+              id="dashboard-sync-btn"
+              onClick={handleRefreshSync}
               disabled={isSyncing || !user}
             >
               {isSyncing ? (
                 <div className="spinner"></div>
               ) : (
                 <>
-                  <Plus size={18} />
-                  <span>Test Sync ke Sheets</span>
+                  <RefreshCw size={18} />
+                  <span>Sync Data</span>
                 </>
               )}
             </button>
@@ -232,9 +233,9 @@ export default function Dashboard() {
         {syncStatus && (
           <div className={`sync-toast sync-toast--${syncStatus} animate-fade-in`}>
             {syncStatus === 'success' ? (
-              <><Zap size={16} /> Data berhasil dikirim ke Google Sheets!</>
+              <><Zap size={16} /> Data berhasil disinkronkan dari Google Sheets!</>
             ) : (
-              <>⚠️ Gagal mengirim data ke Sheets.</>
+              <>⚠️ Gagal sinkronisasi data.</>
             )}
           </div>
         )}
@@ -249,9 +250,8 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="stat-card__value">{isLoading ? '...' : formatRupiah(totalThisMonth)}</div>
-            <div className="stat-card__change stat-card__change--down">
-              <ArrowUpRight size={14} />
-              <span>+12% dari bulan lalu</span>
+            <div className="stat-card__change stat-card__change--neutral">
+              <span>Bulan ini</span>
             </div>
           </div>
 
@@ -263,9 +263,8 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="stat-card__value">{isLoading ? '...' : formatRupiah(avgPerDay)}</div>
-            <div className="stat-card__change stat-card__change--up">
-              <ArrowDownRight size={14} />
-              <span>-5% dari minggu lalu</span>
+            <div className="stat-card__change stat-card__change--neutral">
+              <span>Estimasi harian</span>
             </div>
           </div>
 
@@ -278,7 +277,7 @@ export default function Dashboard() {
             </div>
             <div className="stat-card__value">{isLoading ? '...' : totalItems}</div>
             <div className="stat-card__change stat-card__change--neutral">
-              <span>Bulan ini</span>
+              <span>Transaksi tercatat</span>
             </div>
           </div>
 
@@ -303,91 +302,105 @@ export default function Dashboard() {
               <h3>Tren Pengeluaran</h3>
               <div className="chart-card__filters">
                 <button className="chart-filter chart-filter--active">Harian</button>
-                <button className="chart-filter">Mingguan</button>
               </div>
             </div>
             <div className="chart-card__body">
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={DAILY_DATA} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#25D366" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#25D366" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: '#8888a0', fontSize: 12 }}
-                    axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fill: '#8888a0', fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v) => `${(v/1000)}rb`}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#25D366"
-                    strokeWidth={2.5}
-                    fill="url(#colorAmount)"
-                    dot={{ fill: '#25D366', strokeWidth: 2, r: 4, stroke: '#0a0a0f' }}
-                    activeDot={{ r: 6, stroke: '#25D366', strokeWidth: 2 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {!hasData || dailyTrendData.length === 0 ? (
+                <EmptyState 
+                  icon={TrendingUp} 
+                  title="Belum Ada Data Tren" 
+                  description="Kirim pengeluaran lewat WhatsApp untuk melihat grafik tren harian kamu di sini."
+                />
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={dailyTrendData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#25D366" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#25D366" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fill: '#8888a0', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: '#8888a0', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v) => `${(v/1000)}rb`}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="amount"
+                      stroke="#25D366"
+                      strokeWidth={2.5}
+                      fill="url(#colorAmount)"
+                      dot={{ fill: '#25D366', strokeWidth: 2, r: 4, stroke: '#0a0a0f' }}
+                      activeDot={{ r: 6, stroke: '#25D366', strokeWidth: 2 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 
           <div className="chart-card glass-card">
             <div className="chart-card__header">
               <h3>Per Kategori</h3>
-              <button className="chart-filter">
-                <Download size={14} /> Export
-              </button>
             </div>
             <div className="chart-card__body chart-card__body--pie">
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={categoryPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={65}
-                    outerRadius={100}
-                    paddingAngle={3}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {categoryPieData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
+              {!hasData || categoryPieData.length === 0 ? (
+                <EmptyState 
+                  icon={PieChartIcon} 
+                  title="Belum Ada Kategori" 
+                  description="Data kategori akan muncul setelah kamu mulai mencatat pengeluaran."
+                />
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={categoryPieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={100}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {categoryPieData.map((entry, i) => (
+                          <Cell key={i} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => formatRupiah(value)}
+                        contentStyle={{
+                          background: '#1a1a2e',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: '10px',
+                          color: '#f0f0f5',
+                          fontSize: '13px'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="pie-legend">
+                    {categoryPieData.map((item, i) => (
+                      <div key={i} className="pie-legend__item">
+                        <span className="pie-legend__dot" style={{ background: item.color }}></span>
+                        <span className="pie-legend__label">{item.icon} {item.name}</span>
+                        <span className="pie-legend__value">{formatRupiah(item.value)}</span>
+                      </div>
                     ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value) => formatRupiah(value)}
-                    contentStyle={{
-                      background: '#1a1a2e',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: '10px',
-                      color: '#f0f0f5',
-                      fontSize: '13px'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="pie-legend">
-                {categoryPieData.map((item, i) => (
-                  <div key={i} className="pie-legend__item">
-                    <span className="pie-legend__dot" style={{ background: item.color }}></span>
-                    <span className="pie-legend__label">{item.icon} {item.name}</span>
-                    <span className="pie-legend__value">{formatRupiah(item.value)}</span>
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -398,38 +411,45 @@ export default function Dashboard() {
           <div className="budget-card glass-card">
             <div className="chart-card__header">
               <h3>🎯 Budget Tracker</h3>
-              <button className="chart-filter">Edit Budget</button>
             </div>
             <div className="budget-list">
-              {BUDGET_DATA.map((item, i) => {
-                const pct = Math.round((item.spent / item.limit) * 100)
-                const isOver = pct > 80
-                return (
-                  <div key={i} className="budget-item">
-                    <div className="budget-item__header">
-                      <span className="budget-item__name">{item.icon} {item.category}</span>
-                      <span className={`budget-item__pct ${isOver ? 'budget-item__pct--warn' : ''}`}>
-                        {pct}%
-                      </span>
+              {!hasData || budgetData.length === 0 ? (
+                <EmptyState 
+                  icon={Target} 
+                  title="Belum Ada Budget" 
+                  description="Budget akan otomatis dihitung dari data pengeluaranmu."
+                />
+              ) : (
+                budgetData.slice(0, 5).map((item, i) => {
+                  const pct = Math.round((item.spent / item.limit) * 100)
+                  const isOver = pct > 80
+                  return (
+                    <div key={i} className="budget-item">
+                      <div className="budget-item__header">
+                        <span className="budget-item__name">{item.icon} {item.category}</span>
+                        <span className={`budget-item__pct ${isOver ? 'budget-item__pct--warn' : ''}`}>
+                          {pct}%
+                        </span>
+                      </div>
+                      <div className="budget-bar">
+                        <div
+                          className="budget-bar__fill"
+                          style={{
+                            width: `${Math.min(pct, 100)}%`,
+                            background: isOver
+                              ? 'linear-gradient(90deg, #f97316, #ef4444)'
+                              : `linear-gradient(90deg, ${item.color}, ${item.color}88)`
+                          }}
+                        ></div>
+                      </div>
+                      <div className="budget-item__amounts">
+                        <span>{formatRupiah(item.spent)}</span>
+                        <span>dari {formatRupiah(item.limit)}</span>
+                      </div>
                     </div>
-                    <div className="budget-bar">
-                      <div
-                        className="budget-bar__fill"
-                        style={{
-                          width: `${Math.min(pct, 100)}%`,
-                          background: isOver
-                            ? 'linear-gradient(90deg, #f97316, #ef4444)'
-                            : `linear-gradient(90deg, ${item.color}, ${item.color}88)`
-                        }}
-                      ></div>
-                    </div>
-                    <div className="budget-item__amounts">
-                      <span>{formatRupiah(item.spent)}</span>
-                      <span>dari {formatRupiah(item.limit)}</span>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </div>
           </div>
 
@@ -437,27 +457,37 @@ export default function Dashboard() {
           <div className="recent-card glass-card">
             <div className="chart-card__header">
               <h3>📝 Transaksi Terbaru</h3>
-              <button className="chart-filter" id="view-all-transactions">Lihat Semua</button>
+              {hasData && (
+                <button className="chart-filter" id="view-all-transactions">Lihat Semua</button>
+              )}
             </div>
             <div className="recent-list">
-              {currentExpenses.slice(0, 8).map((expense, idx) => {
-                const cat = CATEGORIES.find(c => c.key === expense.category || c.label === expense.category)
-                return (
-                  <div key={expense.id || idx} className="recent-item">
-                    <div className="recent-item__icon" style={{ background: `${cat?.color || '#333'}18`, color: cat?.color || '#888' }}>
-                      {cat?.icon || '💰'}
+              {!hasData ? (
+                <EmptyState 
+                  icon={Inbox} 
+                  title="Belum Ada Transaksi" 
+                  description="Kirim pesan pengeluaran ke WhatsApp Bot untuk mulai mencatat."
+                />
+              ) : (
+                expenses.slice(-8).reverse().map((expense, idx) => {
+                  const cat = CATEGORIES.find(c => c.key === expense.category?.toLowerCase() || c.label === expense.category)
+                  return (
+                    <div key={idx} className="recent-item">
+                      <div className="recent-item__icon" style={{ background: `${cat?.color || '#333'}18`, color: cat?.color || '#888' }}>
+                        {cat?.icon || '💰'}
+                      </div>
+                      <div className="recent-item__info">
+                        <span className="recent-item__name">{expense.item}</span>
+                        <span className="recent-item__time">{(expense.tanggal || expense.created_at) ? getRelativeTime(expense.tanggal || expense.created_at) : 'Baru saja'}</span>
+                      </div>
+                      <div className="recent-item__amount">
+                        <span>-{formatRupiah(expense.amount)}</span>
+                        <span className="recent-item__cat" style={{ color: cat?.color || '#888' }}>{cat?.label || expense.category}</span>
+                      </div>
                     </div>
-                    <div className="recent-item__info">
-                      <span className="recent-item__name">{expense.item}</span>
-                      <span className="recent-item__time">{(expense.tanggal || expense.created_at) ? getRelativeTime(expense.tanggal || expense.created_at) : 'Baru saja'}</span>
-                    </div>
-                    <div className="recent-item__amount">
-                      <span>-{formatRupiah(expense.amount)}</span>
-                      <span className="recent-item__cat" style={{ color: cat?.color || '#888' }}>{cat?.label || expense.category}</span>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </div>
           </div>
         </div>
@@ -468,11 +498,15 @@ export default function Dashboard() {
             <MessageSquare size={24} />
           </div>
           <div className="wa-recap__content">
-            <h4>💬 Update dari WhatsApp</h4>
-            <p>Terakhir tercatat: <strong>Nasi Padang Rp20.000</strong> — 30 menit lalu. Bot Weberganize aktif dan menunggu pesan berikutnya.</p>
+            <h4>💬 Status WhatsApp Bot</h4>
+            {lastExpense ? (
+              <p>Terakhir tercatat: <strong>{lastExpense.item} {formatRupiah(lastExpense.amount)}</strong> — {(lastExpense.tanggal || lastExpense.created_at) ? getRelativeTime(lastExpense.tanggal || lastExpense.created_at) : 'Baru saja'}. Bot Weberganize aktif dan menunggu pesan berikutnya.</p>
+            ) : (
+              <p>Belum ada transaksi yang tercatat dari WhatsApp. Kirim pesan ke bot untuk mulai mencatat pengeluaranmu!</p>
+            )}
           </div>
-          <button className="btn-secondary wa-recap__btn" id="wa-recap-btn">
-            Lihat Riwayat Chat
+          <button className="btn-secondary wa-recap__btn" id="wa-recap-btn" onClick={handleRefreshSync}>
+            {isSyncing ? 'Memuat...' : 'Refresh Data'}
           </button>
         </div>
       </main>

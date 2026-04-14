@@ -89,13 +89,13 @@ export default function LandingPage() {
 
             <div className="hero__stats animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               <div className="hero__stat">
-                <span className="hero__stat-value">1.2K+</span>
-                <span className="hero__stat-label">Pengguna Aktif</span>
+                <span className="hero__stat-value">⚡</span>
+                <span className="hero__stat-label">AI Super Cepat</span>
               </div>
               <div className="hero__stat-divider"></div>
               <div className="hero__stat">
-                <span className="hero__stat-value">50K+</span>
-                <span className="hero__stat-label">Transaksi Tercatat</span>
+                <span className="hero__stat-value">📊</span>
+                <span className="hero__stat-label">Dashboard Realtime</span>
               </div>
               <div className="hero__stat-divider"></div>
               <div className="hero__stat">
@@ -165,8 +165,8 @@ export default function LandingPage() {
             />
             <FeatureCard
               icon={<Brain size={24} />}
-              title="AI Parsing (Gemini)"
-              desc="Gemini 1.5 Flash mengekstrak item, jumlah, dan kategori secara otomatis."
+              title="AI Parsing (Groq)"
+              desc="Groq AI mengekstrak item, jumlah, dan kategori dari pesanmu secara otomatis."
               color="var(--brand-accent)"
             />
             <FeatureCard
@@ -224,7 +224,7 @@ export default function LandingPage() {
               num="02"
               icon={<Brain size={32} />}
               title="AI Proses & Catat"
-              desc="Gemini AI ekstrak data, kategorikan, dan simpan ke database secara otomatis."
+              desc="Groq AI ekstrak data, kategorikan, dan simpan ke Google Sheets secara otomatis."
               color="var(--brand-accent)"
             />
             <div className="steps__connector">

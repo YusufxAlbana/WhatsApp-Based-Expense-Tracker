@@ -651,3 +651,41 @@
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
 }
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  min-height: 200px;
+}
+
+.empty-state__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: #555;
+}
+
+.empty-state__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ccc;
+  margin-bottom: 0.4rem;
+}
+
+.empty-state__desc {
+  font-size: 0.82rem;
+  color: #777;
+  max-width: 260px;
+  line-height: 1.5;
+}

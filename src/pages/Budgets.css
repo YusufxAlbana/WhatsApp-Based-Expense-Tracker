@@ -473,7 +473,6 @@
   letter-spacing: 0.05em;
 }
 .form-group input,
-.form-group select,
 .form-group textarea {
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.1);
@@ -486,13 +485,124 @@
   transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;
 }
+.form-group textarea {
+  resize: none; /* Disable resizing */
+}
 .form-group input:focus,
-.form-group select:focus,
 .form-group textarea:focus {
   border-color: var(--brand-primary);
   box-shadow: 0 0 0 3px rgba(37,211,102,0.1);
 }
-.form-group select option { background: var(--bg-secondary); color: var(--text-primary); }
+
+/* ── Custom Select (Modern Dropdown) In Budgets ── */
+.custom-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  position: relative;
+}
+
+.settings-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.custom-select-trigger:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.custom-select-trigger.active {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1);
+}
+
+.custom-select-trigger .chevron {
+  color: var(--text-muted);
+  transition: transform 0.3s ease;
+}
+
+.custom-select-trigger .chevron.rotate {
+  transform: rotate(180deg);
+  color: var(--brand-primary);
+}
+
+.custom-select-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+}
+
+.custom-select-options {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #1e2029;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 101;
+  padding: 0.4rem;
+  list-style: none;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+
+.custom-select-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.custom-select-option:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.custom-select-option.selected {
+  background: rgba(37, 211, 102, 0.08);
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+.custom-select-option .check-icon {
+  color: var(--brand-primary);
+}
 
 .form-group--center { justify-content: center; align-items: flex-start; }
 

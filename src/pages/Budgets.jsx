@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   Target, Plus, Edit3, Trash2,
   AlertTriangle, Info, ArrowUpRight,
-  ArrowDownRight, Save, X, Bell, RefreshCw, Wallet
+  ArrowDownRight, Save, X, Bell, RefreshCw, Wallet,
+  ChevronDown, Check
 } from 'lucide-react'
 import { formatRupiah, formatShortRupiah } from '../data/mockData.js'
 import { getExpensesFromSheets } from '../services/googleSheets.js'
@@ -28,6 +29,49 @@ function EmptyBudgets({ onAdd }) {
     </div>
   )
 }
+
+// Custom Modern Dropdown Component
+const CustomSelect = ({ label, options, value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(opt => opt.value === value) || options[0];
+
+  return (
+    <div className="custom-select-container">
+      <label className="settings-label">{label}</label>
+      <div className="custom-select-wrapper">
+        <button 
+          type="button" 
+          className={`custom-select-trigger ${isOpen ? 'active' : ''}`}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <span>{selectedOption?.label || value}</span>
+          <ChevronDown size={14} className={`chevron ${isOpen ? 'rotate' : ''}`} />
+        </button>
+
+        {isOpen && (
+          <div className="dropdown-portal">
+            <div className="custom-select-overlay" onClick={() => setIsOpen(false)} />
+            <ul className="custom-select-options animate-slide-up">
+              {options.map((opt) => (
+                <li 
+                  key={opt.value} 
+                  className={`custom-select-option ${opt.value === value ? 'selected' : ''}`}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  <span>{opt.label}</span>
+                  {opt.value === value && <Check size={14} className="check-icon" />}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // ──────────────────────────────────────────────
 // Component
@@ -385,21 +429,25 @@ export default function Budgets() {
               </div>
 
               <div className="form-row grid-3">
-                <div className="form-group">
-                  <label>Prioritas</label>
-                  <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
-                    <option>Wajib</option>
-                    <option>Opsional</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Siklus</label>
-                  <select value={form.cycle} onChange={e => setForm({ ...form, cycle: e.target.value })}>
-                    <option>Mingguan</option>
-                    <option>Bulanan</option>
-                    <option>Tahunan</option>
-                  </select>
-                </div>
+                <CustomSelect 
+                  label="Prioritas"
+                  value={form.priority}
+                  onChange={val => setForm({ ...form, priority: val })}
+                  options={[
+                    { value: 'Wajib', label: 'Wajib' },
+                    { value: 'Opsional', label: 'Opsional' }
+                  ]}
+                />
+                <CustomSelect 
+                  label="Siklus"
+                  value={form.cycle}
+                  onChange={val => setForm({ ...form, cycle: val })}
+                  options={[
+                    { value: 'Mingguan', label: 'Mingguan' },
+                    { value: 'Bulanan', label: 'Bulanan' },
+                    { value: 'Tahunan', label: 'Tahunan' }
+                  ]}
+                />
                 <div className="form-group form-group--center">
                   <label>Rollover Sisa</label>
                   <label className="toggle-switch">

@@ -1,12 +1,58 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
-  User, Lock, Bell, Globe, 
+  User, Lock, Bell, Globe, ChevronDown, Check,
   Save, Smartphone, Mail, Eye, EyeOff
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import './Dashboard.css'
 import './Settings.css'
+
+// Custom Modern Dropdown Component
+const CustomSelect = ({ label, options, value, onChange, disabled = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(opt => opt.value === value) || options[0];
+
+  return (
+    <div className={`custom-select-container ${disabled ? 'disabled' : ''}`}>
+      <label className="settings-label">{label}</label>
+      <div className="custom-select-wrapper">
+        <button 
+          type="button" 
+          className={`custom-select-trigger ${isOpen ? 'active' : ''}`}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+        >
+          <span>{selectedOption.label}</span>
+          <ChevronDown size={18} className={`chevron ${isOpen ? 'rotate' : ''}`} />
+        </button>
+
+        {isOpen && (
+          <>
+            <div className="custom-select-overlay" onClick={() => setIsOpen(false)} />
+            <ul className="custom-select-options animate-slide-up">
+              {options.map((opt) => (
+                <li 
+                  key={opt.value} 
+                  className={`custom-select-option ${opt.value === value ? 'selected' : ''} ${opt.disabled ? 'opt-disabled' : ''}`}
+                  onClick={() => {
+                    if (!opt.disabled) {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }
+                  }}
+                >
+                  <span>{opt.label}</span>
+                  {opt.value === value && <Check size={16} className="check-icon" />}
+                  {opt.disabled && <span className="disabled-badge">Soon</span>}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function Settings() {
   const navigate = useNavigate()
@@ -245,30 +291,27 @@ export default function Settings() {
                 <form onSubmit={handleSavePrefs} className="settings-form mt-lg">
                   
                   <div className="form-row grid-2">
-                    <div className="form-group">
-                      <label>Mata Uang Utama</label>
-                      <select 
-                        value={prefForm.currency}
-                        onChange={e => setPrefForm({...prefForm, currency: e.target.value})}
-                      >
-                        <option value="IDR">Rupiah (IDR)</option>
-                        <option value="USD">US Dollar (USD)</option>
-                        <option value="EUR">Euro (EUR)</option>
-                      </select>
-                      <span className="form-hint">Mata uang yang tampil di dashboard.</span>
-                    </div>
+                    <CustomSelect 
+                      label="Mata Uang Utama"
+                      value={prefForm.currency}
+                      onChange={val => setPrefForm({...prefForm, currency: val})}
+                      options={[
+                        { value: 'IDR', label: 'Rupiah (IDR)' },
+                        { value: 'USD', label: 'US Dollar (USD)' },
+                        { value: 'EUR', label: 'Euro (EUR)' }
+                      ]}
+                    />
 
-                    <div className="form-group">
-                      <label>Tema Tampilan</label>
-                      <select 
-                        value={prefForm.theme}
-                        onChange={e => setPrefForm({...prefForm, theme: e.target.value})}
-                      >
-                        <option value="dark">Dark Mode (Default)</option>
-                        <option value="light" disabled>Light Mode (Segera Hadir)</option>
-                        <option value="system" disabled>Ikuti Sistem</option>
-                      </select>
-                    </div>
+                    <CustomSelect 
+                      label="Tema Tampilan"
+                      value={prefForm.theme}
+                      onChange={val => setPrefForm({...prefForm, theme: val})}
+                      options={[
+                        { value: 'dark', label: 'Dark Mode (Default)' },
+                        { value: 'light', label: 'Light Mode', disabled: true },
+                        { value: 'system', label: 'Ikuti Sistem', disabled: true }
+                      ]}
+                    />
                   </div>
 
                   <div className="form-group mt-lg">

@@ -20,7 +20,6 @@ export default function Settings() {
   const [profileForm, setProfileForm] = useState({
     name: '',
     email: '',
-    phone: '',
   })
   
   const [prefForm, setPrefForm] = useState({
@@ -49,7 +48,6 @@ export default function Settings() {
       setProfileForm({
         name: parsed.name || '',
         email: parsed.id || '', // we use email as id
-        phone: parsed.phone || '+62 812-3456-7890' // Dummy default
       })
       
       const savedPrefs = localStorage.getItem('weberganize_prefs')
@@ -70,7 +68,7 @@ export default function Settings() {
     setSaveStatus(null)
     
     setTimeout(() => {
-      const updatedUser = { ...user, name: profileForm.name, phone: profileForm.phone }
+      const updatedUser = { ...user, name: profileForm.name }
       localStorage.setItem('weberganize_user', JSON.stringify(updatedUser))
       setUser(updatedUser)
       setIsSaving(false)
@@ -225,20 +223,6 @@ export default function Settings() {
                     <span className="form-hint">Email identitas Google Sheets untuk akses data pengeluaran.</span>
                   </div>
 
-                  <div className="form-group">
-                    <label>Nomor WhatsApp (Terhubung ke Bot)</label>
-                    <div className="input-with-icon">
-                      <Smartphone size={18} className="input-icon" />
-                      <input 
-                        type="text" 
-                        value={profileForm.phone} 
-                        onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
-                        placeholder="+62 8xx xxxx xxxx"
-                        required
-                      />
-                    </div>
-                    <span className="form-hint">Nomor telepon yang digunakan Weberganize Bot untuk mencatat.</span>
-                  </div>
 
                   <div className="form-actions border-top pt-lg mt-xl">
                     <button type="submit" className="btn-primary" disabled={isSaving}>

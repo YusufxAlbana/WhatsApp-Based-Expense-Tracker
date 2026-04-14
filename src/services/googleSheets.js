@@ -46,27 +46,60 @@ export const sendToGoogleSheets = async (data) => {
 };
 
 /**
- * Fetches transaction data from Google Sheets filtered by userId
+ * Fetches transaction data from Google Sheets using JSONP to bypass CORS.
+ * Google Apps Script supports ?callback= for JSONP responses.
  * @param {string} userId - The user's unique identifier
  * @returns {Promise<Array>} - Array of transaction objects
  */
-export const getExpensesFromSheets = async (userId) => {
-  try {
-    const url = `${import.meta.env.VITE_GOOGLE_SHEETS_URL}?userId=${encodeURIComponent(userId)}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    // Google Sheets returns array of objects
-    // Ensure 'amount' is a number for chart compatibility
-    return data.map(item => ({
-      ...item,
-      amount: Number(item.amount)
-    }));
-  } catch (error) {
-    console.error("Gagal mengambil data dari Sheets:", error);
-    return [];
-  }
-};
+export const getExpensesFromSheets = (userId) => {
+  return new Promise((resolve) => {
+    const callbackName = `gsCallback_${Date.now()}`
+    const url = `${import.meta.env.VITE_GOOGLE_SHEETS_URL}?userId=${encodeURIComponent(userId)}&callback=${callbackName}`
+
+    // Create a global callback that GAS will call
+    window[callbackName] = (data) => {
+      try {
+        const result = Array.isArray(data)
+          ? data.map(item => ({ ...item, amount: Number(item.amount) }))
+          : []
+        resolve(result)
+      } catch {
+        resolve([])
+      } finally {
+        // Cleanup
+        delete window[callbackName]
+        if (script.parentNode) script.parentNode.removeChild(script)
+      }
+    }
+
+    // Inject script tag
+    const script = document.createElement('script')
+    script.src = url
+    script.onerror = () => {
+      console.error('Gagal mengambil data dari Sheets (CORS/network error)')
+      delete window[callbackName]
+      if (script.parentNode) script.parentNode.removeChild(script)
+      resolve([])
+    }
+
+    // Timeout safety — if GAS doesn't respond in 10s
+    const timeout = setTimeout(() => {
+      console.warn('Google Sheets request timeout')
+      delete window[callbackName]
+      if (script.parentNode) script.parentNode.removeChild(script)
+      resolve([])
+    }, 10000)
+
+    // Clear timeout when callback fires
+    const originalCallback = window[callbackName]
+    window[callbackName] = (data) => {
+      clearTimeout(timeout)
+      originalCallback(data)
+    }
+
+    document.head.appendChild(script)
+  })
+}
 
 /**
  * Helper to process raw expenses into category-based data for charts

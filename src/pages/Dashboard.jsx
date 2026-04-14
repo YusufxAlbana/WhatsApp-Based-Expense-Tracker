@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
-  Zap, LayoutDashboard, Receipt, PieChart as PieChartIcon,
-  TrendingUp, Bell, Settings, LogOut, Search, Plus,
-  ArrowUpRight, ArrowDownRight, Calendar, Filter,
-  ChevronDown, Wallet, Target, MessageSquare, Download,
+  Zap, Receipt, PieChart as PieChartIcon,
+  TrendingUp, TrendingDown, Plus, Search,
+  ArrowDownCircle, ArrowUpRight, Calendar, ChevronDown,
+  Wallet, Target, MessageSquare,
   RefreshCw, Inbox
 } from 'lucide-react'
 import {
@@ -12,7 +12,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts'
 import {
-  CATEGORIES, formatRupiah, getRelativeTime,
+  CATEGORIES, formatRupiah, formatShortRupiah, getRelativeTime,
   getDailyTrendData, getBudgetFromExpenses
 } from '../data/mockData.js'
 import { 
@@ -22,16 +22,6 @@ import {
 } from '../services/googleSheets.js'
 import Sidebar from '../components/Sidebar'
 import './Dashboard.css'
-
-const SIDEBAR_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard', path: '/dashboard' },
-  { icon: Receipt, label: 'Transaksi', key: 'transactions', path: '/transactions' },
-  { icon: PieChartIcon, label: 'Analitik', key: 'analytics', path: '/analytics' },
-  { icon: Target, label: 'Budget', key: 'budget', path: '/dashboard' },
-  { icon: MessageSquare, label: 'WhatsApp', key: 'whatsapp', path: '/dashboard' },
-  { icon: Bell, label: 'Notifikasi', key: 'notifications', path: '/dashboard' },
-  { icon: Settings, label: 'Pengaturan', key: 'settings', path: '/dashboard' },
-]
 
 function CustomTooltip({ active, payload, label }) {
   if (active && payload && payload.length) {

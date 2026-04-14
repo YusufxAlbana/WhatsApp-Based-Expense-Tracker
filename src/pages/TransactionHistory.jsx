@@ -1,17 +1,22 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
-  Zap, LayoutDashboard, Receipt, PieChart as PieChartIcon,
-  TrendingUp, Bell, Settings, LogOut, Search, Plus,
-  ArrowUpRight, ArrowDownRight, Calendar, Filter,
-  ChevronDown, ChevronLeft, ChevronRight, Wallet, Target,
-  MessageSquare, Download, RefreshCw, Inbox, Edit3, Trash2,
-  Check, X, SlidersHorizontal, ArrowUpDown
+  Zap, Receipt, PieChart as PieChartIcon,
+  Search, RefreshCw, Inbox, Edit3, Trash2,
+  Check, X, SlidersHorizontal, ArrowUpDown,
+  ChevronLeft, ChevronRight, Wallet, MessageSquare
 } from 'lucide-react'
 import {
   CATEGORIES, formatRupiah, getRelativeTime
 } from '../data/mockData.js'
+import {
+  getExpensesFromSheets,
+  updateExpenseInSheets,
+  deleteExpenseInSheets
+} from '../services/googleSheets.js'
 import Sidebar from '../components/Sidebar'
+import './Dashboard.css'
+import './TransactionHistory.css'
 
 const ITEMS_PER_PAGE = 10
 

@@ -1,71 +1,82 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
-  Zap, LayoutDashboard, Receipt, PieChart as PieChartIcon,
-  Target, Bell, Settings, LogOut, Plus, Edit3, Trash2, 
-  ChevronDown, AlertTriangle, CheckCircle2, Info, ArrowUpRight,
-  ArrowDownRight, Save, X, Calendar, Flag, MessageSquare, RefreshCw
+  Target, Plus, Edit3, Trash2,
+  AlertTriangle, Info, ArrowUpRight,
+  ArrowDownRight, Save, X, Bell, RefreshCw, Wallet
 } from 'lucide-react'
-import {
-  CATEGORIES, formatRupiah, formatShortRupiah
-} from '../data/mockData.js'
-import {
-  getExpensesFromSheets
-} from '../services/googleSheets.js'
+import { formatRupiah, formatShortRupiah } from '../data/mockData.js'
+import { getExpensesFromSheets } from '../services/googleSheets.js'
+import Sidebar from '../components/Sidebar'
 import './Dashboard.css'
 import './Budgets.css'
 
-import Sidebar from '../components/Sidebar'
+// ──────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────
+function EmptyBudgets({ onAdd }) {
+  return (
+    <div className="budgets-empty-state">
+      <div className="budgets-empty-icon">
+        <Target size={52} />
+      </div>
+      <h3>Belum Ada Anggaran</h3>
+      <p>Buat anggaran pertama Anda untuk mulai memantau kesehatan dompet secara lebih terstruktur.</p>
+      <button className="btn-primary mt-lg" onClick={onAdd}>
+        <Plus size={18} /> Buat Anggaran
+      </button>
+    </div>
+  )
+}
 
-const DEFAULT_BUDGETS = [
-  { id: 1, category: 'Makanan', limit: 2000000, threshold: 80, cycle: 'Bulanan', priority: 'Wajib', rollover: false, icon: '🍔', color: '#f97316', notes: 'Makan harian & kantor' },
-  { id: 2, category: 'Transportasi', limit: 1000000, threshold: 90, cycle: 'Bulanan', priority: 'Wajib', rollover: true, icon: '🚗', color: '#3b82f6', notes: 'Bensin & Ojol' },
-  { id: 3, category: 'Hiburan', limit: 500000, threshold: 70, cycle: 'Bulanan', priority: 'Opsional', rollover: false, icon: '🎮', color: '#ec4899', notes: 'Netflix & Bioskop' },
-]
-
+// ──────────────────────────────────────────────
+// Component
+// ──────────────────────────────────────────────
 export default function Budgets() {
   const navigate = useNavigate()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [user, setUser] = useState(null)
+  const [sidebarOpen] = useState(true)
+  const [user, setUser]         = useState(null)
   const [expenses, setExpenses] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isSyncing, setIsSyncing] = useState(false)
-  
-  // Budget State
+
+  // Budgets persisted in localStorage (no dummy defaults – start empty)
   const [budgets, setBudgets] = useState(() => {
-    const saved = localStorage.getItem('weberganize_budgets')
-    return saved ? JSON.parse(saved) : DEFAULT_BUDGETS
-  })
-
-  // Modal/Edit State
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingBudget, setEditingBudget] = useState(null)
-  const [formData, setFormData] = useState({
-    category: '', limit: '', threshold: 80, cycle: 'Bulanan', 
-    priority: 'Wajib', rollover: false, icon: '💰', color: '#25D366', notes: ''
-  })
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem('weberganize_user')
-    if (!savedUser) {
-      navigate('/auth')
-    } else {
-      setUser(JSON.parse(savedUser))
+    try {
+      const saved = localStorage.getItem('weberganize_budgets')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
     }
+  })
+
+  // Modal state
+  const [isModalOpen, setIsModalOpen]   = useState(false)
+  const [editingBudget, setEditingBudget] = useState(null)
+  const EMPTY_FORM = {
+    category: '', limit: '', threshold: 80,
+    cycle: 'Bulanan', priority: 'Wajib',
+    rollover: false, icon: '💰', color: '#25D366', notes: ''
+  }
+  const [form, setForm] = useState(EMPTY_FORM)
+
+  // ── Auth guard
+  useEffect(() => {
+    const saved = localStorage.getItem('weberganize_user')
+    if (!saved) { navigate('/auth'); return }
+    setUser(JSON.parse(saved))
   }, [navigate])
 
-  const refreshData = async () => {
+  // ── Fetch real data
+  const fetchData = async () => {
     if (!user?.id) return
     setIsLoading(true)
     const data = await getExpensesFromSheets(user.id)
     setExpenses(data || [])
     setIsLoading(false)
   }
+  useEffect(() => { if (user) fetchData() }, [user])
 
-  useEffect(() => {
-    if (user) refreshData()
-  }, [user])
-
+  // ── Persist budgets
   useEffect(() => {
     localStorage.setItem('weberganize_budgets', JSON.stringify(budgets))
   }, [budgets])
@@ -75,245 +86,300 @@ export default function Budgets() {
     navigate('/')
   }
 
-  // Calculate Real Spent per Budget Category
+  // ── Compute stats from real expenses
   const budgetStats = useMemo(() => {
     return budgets.map(b => {
       const spent = expenses
-        .filter(e => e.category?.toLowerCase() === b.category?.toLowerCase() || 
-                     e.category?.toLowerCase() === b.id.toString())
-        .reduce((sum, e) => sum + Number(e.amount), 0)
-      
-      const remaining = b.limit - spent
-      const percent = Math.round((spent / b.limit) * 100)
-      const isOver = percent >= b.threshold
+        .filter(e => e.category?.toLowerCase() === b.category?.toLowerCase())
+        .reduce((sum, e) => sum + Number(e.amount || 0), 0)
+
+      const limit     = Number(b.limit) || 1
+      const remaining = limit - spent
+      const percent   = Math.min(Math.round((spent / limit) * 100), 999)
+      const isOver    = percent >= Number(b.threshold)
       const isCritical = percent >= 100
 
       return { ...b, spent, remaining, percent, isOver, isCritical }
     })
   }, [budgets, expenses])
 
-  const totalBudget = budgets.reduce((sum, b) => sum + Number(b.limit), 0)
-  const totalSpent = budgetStats.reduce((sum, b) => sum + b.spent, 0)
-  const overallPercent = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0
+  const totalBudget  = budgets.reduce((s, b) => s + Number(b.limit || 0), 0)
+  const totalSpent   = budgetStats.reduce((s, b) => s + b.spent, 0)
+  const totalRemain  = totalBudget - totalSpent
+  const overallPct   = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0
+  const overBudgetCount = budgetStats.filter(b => b.isCritical).length
 
-  // Actions
-  const handleOpenModal = (budget = null) => {
-    if (budget) {
-      setEditingBudget(budget)
-      setFormData({ ...budget })
-    } else {
-      setEditingBudget(null)
-      setFormData({
-        category: '', limit: '', threshold: 80, cycle: 'Bulanan', 
-        priority: 'Wajib', rollover: false, icon: '💰', color: '#25D366', notes: ''
-      })
-    }
+  // ── Modal helpers
+  const openAdd = () => {
+    setEditingBudget(null)
+    setForm(EMPTY_FORM)
     setIsModalOpen(true)
   }
+  const openEdit = (b) => {
+    setEditingBudget(b)
+    setForm({ ...b })
+    setIsModalOpen(true)
+  }
+  const closeModal = () => setIsModalOpen(false)
 
-  const handleSubmit = (e) => {
+  const handleSave = (e) => {
     e.preventDefault()
     if (editingBudget) {
-      setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...formData, id: b.id } : b))
+      setBudgets(prev => prev.map(b => b.id === editingBudget.id ? { ...form, id: b.id } : b))
     } else {
-      setBudgets([...budgets, { ...formData, id: Date.now() }])
+      setBudgets(prev => [...prev, { ...form, id: Date.now() }])
     }
-    setIsModalOpen(false)
+    closeModal()
   }
 
   const handleDelete = (id) => {
-    if (confirm('Hapus anggaran ini?')) {
-      setBudgets(budgets.filter(b => b.id !== id))
-    }
+    if (!window.confirm('Hapus anggaran ini?')) return
+    setBudgets(prev => prev.filter(b => b.id !== id))
   }
 
+  // ──────────────────────────────────────────────
+  // Render
+  // ──────────────────────────────────────────────
   return (
     <div className="dashboard-layout">
-      {/* Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        user={user} 
-        onLogout={handleLogout} 
-      />
+      <Sidebar isOpen={sidebarOpen} user={user} onLogout={handleLogout} />
 
-      {/* Main Content */}
       <main className="dashboard-main">
+        {/* ── Top Bar ── */}
         <header className="dashboard-topbar">
           <div className="dashboard-topbar__left">
             <h1 className="dashboard-topbar__title">🎯 Kelola Anggaran</h1>
-            <p className="dashboard-topbar__subtitle">Atur batas pengeluaran untuk kesehatan dompet Anda</p>
+            <p className="dashboard-topbar__subtitle">Pantau batas pengeluaran per kategori secara real-time</p>
           </div>
           <div className="dashboard-topbar__right">
-            <button className="btn-secondary" onClick={refreshData} disabled={isLoading}>
-              <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
-              <span>Update Data</span>
+            <button className="btn-secondary" onClick={fetchData} disabled={isLoading}>
+              <RefreshCw size={16} className={isLoading ? 'spin' : ''} />
+              <span>Sinkron Data</span>
             </button>
-            <button className="btn-primary" onClick={() => handleOpenModal()}>
-              <Plus size={18} />
+            <button className="btn-primary" onClick={openAdd}>
+              <Plus size={16} />
               <span>Budget Baru</span>
             </button>
           </div>
         </header>
 
-        {/* Overview Stats */}
-        <div className="budget-overview-grid stagger-children">
-          <div className="glass-card budget-summary-card">
-            <div className="summary-header">
-              <div className="summary-info">
-                <span className="text-muted text-sm">Total Budget Bulanan</span>
-                <h2 className="text-2xl font-black">{formatRupiah(totalBudget)}</h2>
+        {/* ── Summary Cards ── */}
+        {budgets.length > 0 && (
+          <div className="budget-overview-grid">
+            {/* Total Budget Card */}
+            <div className="glass-card budget-summary-card">
+              <div className="summary-header">
+                <div className="summary-info">
+                  <span className="label-muted">Total Budget Bulanan</span>
+                  <h2 className="summary-total">{formatRupiah(totalBudget)}</h2>
+                </div>
+                <div className="circular-progress" style={{ '--percent': overallPct }}>
+                  <span>{overallPct}%</span>
+                </div>
               </div>
-              <div className="summary-percentage">
-                <div className="circular-progress" style={{ '--percent': overallPercent }}>
-                  <span>{overallPercent}%</span>
+              <div className="summary-footer">
+                <div className="footer-item">
+                  <ArrowDownRight className="icon-danger" size={16} />
+                  <span>Terpakai: <strong>{formatShortRupiah(totalSpent)}</strong></span>
+                </div>
+                <div className="footer-item">
+                  <ArrowUpRight className="icon-success" size={16} />
+                  <span>Sisa: <strong className={totalRemain < 0 ? 'text-danger' : 'text-success'}>{formatShortRupiah(Math.abs(totalRemain))}</strong></span>
                 </div>
               </div>
             </div>
-            <div className="summary-footer">
-              <div className="footer-item">
-                <ArrowDownRight className="text-danger" size={16} />
-                <span>Terpakai: {formatShortRupiah(totalSpent)}</span>
-              </div>
-              <div className="footer-item">
-                <ArrowUpRight className="text-brand" size={16} />
-                <span>Sisa: {formatShortRupiah(totalBudget - totalSpent)}</span>
+
+            {/* Insight Card */}
+            <div className="glass-card budget-insight-card">
+              <div className="insight-row">
+                <div className={`insight-icon-wrap ${overallPct > 80 ? 'warn' : 'ok'}`}>
+                  {overallPct > 80 ? <AlertTriangle size={22} /> : <Info size={22} />}
+                </div>
+                <div className="insight-body">
+                  <h4 className="insight-title">
+                    {overBudgetCount > 0
+                      ? `⚠️ ${overBudgetCount} kategori melebihi batas!`
+                      : overallPct > 80
+                      ? 'Waspada – Hampir Habis'
+                      : 'Dompet Sehat 🎉'}
+                  </h4>
+                  <p className="insight-desc">
+                    {overBudgetCount > 0
+                      ? 'Segera kurangi pengeluaran di kategori yang melebihi anggaran.'
+                      : overallPct > 80
+                      ? 'Pengeluaran hampir mencapai batas total. Hati-hati!'
+                      : `Tersisa ${formatShortRupiah(Math.max(totalRemain, 0))} dari total anggaran bulan ini.`}
+                  </p>
+                  <div className="summary-bar-wrap">
+                    <div className="summary-bar">
+                      <div
+                        className="summary-bar-fill"
+                        style={{
+                          width: `${overallPct}%`,
+                          background: overallPct >= 100 ? '#ef4444' : overallPct > 80 ? '#f59e0b' : 'var(--brand-primary)'
+                        }}
+                      />
+                    </div>
+                    <span className="bar-label">{overallPct}% terpakai</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        )}
 
-          <div className="glass-card budget-insight-card">
-            <div className="flex items-start gap-4">
-              <div className="insight-icon info-bg"><Info size={24} /></div>
-              <div>
-                <h4 className="font-bold">Insight Anggaran</h4>
-                <p className="text-sm text-muted mt-1">
-                  {overallPercent > 80 ? 'Waspada! Pengeluaran total hampir mencapai batas.' : 'Dompet Anda dalam kondisi sehat bulan ini.'}
-                </p>
-                <div className="period-comparison mt-3">
-                   <span className="text-xs text-brand bg-brand-light px-2 py-1 rounded-full">
-                     <ArrowDownRight size={10} className="inline mr-1" /> 12% lebih hemat dari bulan lalu
-                   </span>
-                </div>
-              </div>
-            </div>
+        {/* ── Loading State ── */}
+        {isLoading && budgets.length > 0 && (
+          <div className="loading-bar-strip">
+            <div className="loading-bar-fill" />
           </div>
-        </div>
+        )}
 
-        {/* Budget Cards List */}
-        <div className="budget-list-grid mt-xl">
-          {budgetStats.map(b => (
-            <div key={b.id} className={`budget-card-item glass-card ${b.isCritical ? 'border-critical' : b.isOver ? 'border-warning' : ''}`}>
-              <div className="budget-card-header">
-                <div className="category-info">
-                  <div className="cat-icon-container" style={{ backgroundColor: `${b.color}22`, color: b.color }}>
-                    <span>{b.icon}</span>
+        {/* ── Empty State ── */}
+        {budgets.length === 0 && !isLoading && (
+          <EmptyBudgets onAdd={openAdd} />
+        )}
+
+        {/* ── Budget Cards Grid ── */}
+        {budgets.length > 0 && (
+          <div className="budget-list-grid mt-xl">
+            {budgetStats.map(b => (
+              <div
+                key={b.id}
+                className={`budget-card-item glass-card ${b.isCritical ? 'border-critical' : b.isOver ? 'border-warning' : ''}`}
+              >
+                {/* Card Header */}
+                <div className="budget-card-header">
+                  <div className="category-info">
+                    <div
+                      className="cat-icon-container"
+                      style={{ backgroundColor: `${b.color}20`, color: b.color }}
+                    >
+                      {b.icon}
+                    </div>
+                    <div>
+                      <h3 className="cat-name">{b.category}</h3>
+                      <span className="cat-meta">
+                        {b.priority} &nbsp;·&nbsp; {b.cycle}
+                        {b.rollover && <> &nbsp;·&nbsp; <span className="rollover-badge">Rollover</span></>}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg">{b.category}</h3>
-                    <span className="text-xs text-muted font-medium uppercase tracking-wider">{b.priority} • {b.cycle}</span>
+                  <div className="budget-card-actions">
+                    <button className="action-circle edit" onClick={() => openEdit(b)} title="Edit">
+                      <Edit3 size={14} />
+                    </button>
+                    <button className="action-circle delete" onClick={() => handleDelete(b.id)} title="Hapus">
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
-                <div className="budget-card-actions">
-                  <button className="action-circle edit" onClick={() => handleOpenModal(b)}><Edit3 size={14} /></button>
-                  <button className="action-circle delete" onClick={() => handleDelete(b.id)}><Trash2 size={14} /></button>
-                </div>
-              </div>
 
-              <div className="budget-progress-section mt-lg">
-                <div className="flex-between mb-2">
-                  <span className="text-sm font-bold">{b.percent}% Terpakai</span>
-                  <span className="text-xs text-muted">Limit: {formatShortRupiah(b.limit)}</span>
+                {/* Progress */}
+                <div className="budget-progress-section">
+                  <div className="progress-labels">
+                    <span className="spent-label">
+                      {formatShortRupiah(b.spent)} terpakai
+                    </span>
+                    <span className="limit-label">dari {formatShortRupiah(Number(b.limit))}</span>
+                  </div>
+                  <div className="budget-bar-large">
+                    <div
+                      className="budget-bar-fill"
+                      style={{
+                        width: `${Math.min(b.percent, 100)}%`,
+                        backgroundColor: b.isCritical ? '#ef4444' : b.isOver ? '#f59e0b' : b.color
+                      }}
+                    />
+                  </div>
+                  <div className="progress-footer">
+                    <span
+                      className={`pct-badge ${b.isCritical ? 'pct-critical' : b.isOver ? 'pct-warning' : 'pct-ok'}`}
+                    >
+                      {b.percent}% terpakai
+                    </span>
+                    <span className={`remaining-val ${b.remaining < 0 ? 'text-danger' : 'text-success'}`}>
+                      {b.remaining < 0 ? '-' : ''}{formatShortRupiah(Math.abs(b.remaining))} sisa
+                    </span>
+                  </div>
                 </div>
-                <div className="budget-bar-large">
-                  <div 
-                    className="budget-bar-fill" 
-                    style={{ 
-                      width: `${Math.min(b.percent, 100)}%`, 
-                      backgroundColor: b.isCritical ? '#ef4444' : b.isOver ? '#f59e0b' : b.color 
-                    }}
-                  ></div>
-                </div>
-              </div>
 
-              <div className="budget-details mt-lg">
-                <div className="detail-row">
-                   <span className="text-muted text-sm">Sisa Anggaran</span>
-                   <span className={`font-bold ${b.remaining < 0 ? 'text-danger' : 'text-brand'}`}>
-                     {formatRupiah(b.remaining)}
-                   </span>
-                </div>
+                {/* Notes */}
                 {b.notes && (
-                  <div className="budget-notes mt-md">
-                    <p className="text-xs text-muted italic">" {b.notes} "</p>
+                  <p className="budget-notes">"{b.notes}"</p>
+                )}
+
+                {/* Alert Pill */}
+                {b.isOver && (
+                  <div className={`budget-alert-pill ${b.isCritical ? 'critical' : 'warning'}`}>
+                    {b.isCritical ? <AlertTriangle size={13} /> : <Bell size={13} />}
+                    <span>{b.isCritical ? 'Anggaran Terlampaui!' : `Ambang batas ${b.threshold}% tercapai`}</span>
                   </div>
                 )}
               </div>
+            ))}
 
-              {b.isOver && (
-                <div className={`budget-alert-pill mt-md ${b.isCritical ? 'critical' : 'warning'}`}>
-                  {b.isCritical ? <AlertTriangle size={14} /> : <Bell size={14} />}
-                  <span>{b.isCritical ? 'Budget Terlampaui!' : 'Mendekati Batas!'}</span>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* Add New Trigger Card */}
-          <div className="budget-card-item add-card cursor-pointer" onClick={() => handleOpenModal()}>
-             <div className="flex-center flex-col gap-3 py-10 opacity-60 hover:opacity-100 transition-opacity">
-                <div className="add-icon-circle"><Plus size={30} /></div>
-                <span className="font-bold">Tambah Anggaran</span>
-             </div>
+            {/* Add Trigger */}
+            <button className="budget-card-item add-card" onClick={openAdd}>
+              <div className="add-card-inner">
+                <div className="add-icon-circle"><Plus size={28} /></div>
+                <span>Tambah Anggaran</span>
+              </div>
+            </button>
           </div>
-        </div>
+        )}
       </main>
 
-      {/* Modal Form */}
+      {/* ── Modal ── */}
       {isModalOpen && (
-        <div className="modal-overlay animate-fade-in">
-          <div className="modal-content glass-card card-xl">
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content glass-card card-xl" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingBudget ? 'Edit Anggaran' : 'Anggaran Baru'}</h3>
-              <button className="modal-close" onClick={() => setIsModalOpen(false)}><X size={20} /></button>
+              <h3>{editingBudget ? '✏️ Edit Anggaran' : '➕ Anggaran Baru'}</h3>
+              <button className="modal-close-btn" onClick={closeModal}><X size={20} /></button>
             </div>
-            <form onSubmit={handleSubmit} className="modal-form">
+
+            <form onSubmit={handleSave} className="modal-form">
               <div className="form-row grid-2">
                 <div className="form-group">
-                  <label>Nama Kategori</label>
-                  <input 
-                    required 
-                    placeholder="Misal: Jajan" 
-                    value={formData.category} 
-                    onChange={e => setFormData({...formData, category: e.target.value})}
+                  <label>Nama Kategori *</label>
+                  <input
+                    required
+                    placeholder="Misal: Makan Siang"
+                    value={form.category}
+                    onChange={e => setForm({ ...form, category: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Simbol Ikon</label>
-                  <input 
-                    placeholder="Emoji, misal: 🍟" 
-                    value={formData.icon} 
-                    onChange={e => setFormData({...formData, icon: e.target.value})}
+                  <label>Ikon Emoji</label>
+                  <input
+                    placeholder="Misal: 🍔"
+                    value={form.icon}
+                    onChange={e => setForm({ ...form, icon: e.target.value })}
                   />
                 </div>
               </div>
 
               <div className="form-row grid-2">
                 <div className="form-group">
-                  <label>Nominal Limit (Rp)</label>
-                  <input 
-                    type="number" 
-                    required 
-                    placeholder="1000000" 
-                    value={formData.limit} 
-                    onChange={e => setFormData({...formData, limit: e.target.value})}
+                  <label>Nominal Limit (Rp) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="1000"
+                    placeholder="Contoh: 1500000"
+                    value={form.limit}
+                    onChange={e => setForm({ ...form, limit: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
                   <label>Ambang Batas Peringatan (%)</label>
-                  <input 
-                    type="number" 
-                    value={formData.threshold} 
-                    onChange={e => setFormData({...formData, threshold: e.target.value})}
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={form.threshold}
+                    onChange={e => setForm({ ...form, threshold: Number(e.target.value) })}
                   />
                 </div>
               </div>
@@ -321,44 +387,47 @@ export default function Budgets() {
               <div className="form-row grid-3">
                 <div className="form-group">
                   <label>Prioritas</label>
-                  <select value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})}>
+                  <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
                     <option>Wajib</option>
                     <option>Opsional</option>
                   </select>
                 </div>
                 <div className="form-group">
-                   <label>Siklus</label>
-                   <select value={formData.cycle} onChange={e => setFormData({...formData, cycle: e.target.value})}>
-                     <option>Mingguan</option>
-                     <option>Bulanan</option>
-                     <option>Tahunan</option>
-                   </select>
+                  <label>Siklus</label>
+                  <select value={form.cycle} onChange={e => setForm({ ...form, cycle: e.target.value })}>
+                    <option>Mingguan</option>
+                    <option>Bulanan</option>
+                    <option>Tahunan</option>
+                  </select>
                 </div>
-                <div className="form-group flex items-end">
-                   <label className="checkbox-group">
-                     <input 
-                       type="checkbox" 
-                       checked={formData.rollover} 
-                       onChange={e => setFormData({...formData, rollover: e.target.checked})} 
-                     />
-                     <span>Rollover</span>
-                   </label>
+                <div className="form-group form-group--center">
+                  <label>Rollover Sisa</label>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={form.rollover}
+                      onChange={e => setForm({ ...form, rollover: e.target.checked })}
+                    />
+                    <span className="toggle-track"><span className="toggle-thumb" /></span>
+                  </label>
                 </div>
               </div>
 
               <div className="form-group">
                 <label>Catatan / Tujuan</label>
-                <textarea 
-                  rows="2" 
-                  placeholder="Deskripsi singkat..." 
-                  value={formData.notes} 
-                  onChange={e => setFormData({...formData, notes: e.target.value})}
-                ></textarea>
+                <textarea
+                  rows="2"
+                  placeholder="Misal: Untuk makan siang kantor dan kopi pagi..."
+                  value={form.notes}
+                  onChange={e => setForm({ ...form, notes: e.target.value })}
+                />
               </div>
 
               <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Batal</button>
-                <button type="submit" className="btn-primary"><Save size={18} /> Simpan Anggaran</button>
+                <button type="button" className="btn-secondary" onClick={closeModal}>Batal</button>
+                <button type="submit" className="btn-primary">
+                  <Save size={16} /> Simpan
+                </button>
               </div>
             </form>
           </div>

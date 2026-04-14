@@ -130,3 +130,28 @@
   color: #ef4444;
   background: rgba(239, 68, 68, 0.08);
 }
+
+/* ── Disabled (Coming Soon) items ── */
+.sidebar__item--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: auto; /* keep for tooltip via title */
+}
+
+.sidebar__item--disabled:hover {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+}
+
+.sidebar__soon {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+

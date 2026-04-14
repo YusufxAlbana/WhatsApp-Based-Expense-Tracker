@@ -43,6 +43,7 @@ export default function AuthPage() {
           password: formData.password,
           name: formData.name
         })
+        user.password = formData.password
         localStorage.setItem('weberganize_user', JSON.stringify(user))
         
         setTimeout(() => {
@@ -66,6 +67,7 @@ export default function AuthPage() {
         
         // Login berhasil! Data kredensial cocok dengan Spreadsheet
         const confirmedUser = resp.user
+        confirmedUser.password = formData.password
         localStorage.setItem('weberganize_user', JSON.stringify(confirmedUser))
         
         setTimeout(() => {

@@ -96,6 +96,11 @@ export default function Settings() {
         email: parsed.id || '', // we use email as id
       })
       
+      setSecurityForm(prev => ({
+        ...prev,
+        currentPassword: parsed.password || 'Silakan relogin untuk melihat'
+      }))
+      
       const savedPrefs = localStorage.getItem('weberganize_prefs')
       if(savedPrefs) {
         setPrefForm(JSON.parse(savedPrefs))
@@ -376,8 +381,9 @@ export default function Settings() {
                         type={showPassword ? "text" : "password"}
                         value={securityForm.currentPassword} 
                         onChange={e => setSecurityForm({...securityForm, currentPassword: e.target.value})}
-                        required
-                        placeholder="••••••••"
+                        disabled
+                        className="input-disabled"
+                        title="Kata sandi yang Anda gunakan saat ini"
                       />
                       <button 
                         type="button" 

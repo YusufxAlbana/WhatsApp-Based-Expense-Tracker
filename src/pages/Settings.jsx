@@ -310,8 +310,8 @@ export default function Settings() {
                       onChange={val => setPrefForm({...prefForm, currency: val})}
                       options={[
                         { value: 'IDR', label: 'Rupiah (IDR)' },
-                        { value: 'USD', label: 'US Dollar (USD)' },
-                        { value: 'EUR', label: 'Euro (EUR)' }
+                        { value: 'USD', label: 'US Dollar (USD)', disabled: true },
+                        { value: 'EUR', label: 'Euro (EUR)', disabled: true }
                       ]}
                     />
 

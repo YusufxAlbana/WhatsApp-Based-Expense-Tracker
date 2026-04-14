@@ -94,3 +94,70 @@ export const getCategoryData = (expenses) => {
   // We keep the original casing for the display name
   return Object.values(categories);
 };
+
+/**
+ * Updates a specific transaction in Google Sheets
+ * @param {Object} data - Updated transaction data
+ * @param {number} data.rowIndex - The row index in the spreadsheet
+ * @param {string} data.userId - The user's unique identifier
+ * @param {string} data.item - Updated item name
+ * @param {number} data.amount - Updated amount
+ * @param {string} data.category - Updated category
+ * @returns {Promise<boolean>} - Success status
+ */
+export const updateExpenseInSheets = async (data) => {
+  try {
+    const response = await fetch(GOOGLE_SHEETS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain"
+      },
+      body: JSON.stringify({
+        action: "update",
+        ...data
+      }),
+    });
+
+    if (response.type === 'opaque' || response.ok) {
+      console.log("Data berhasil di-update di Google Sheets!");
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Gagal update data di Sheets:", error);
+    throw error;
+  }
+};
+
+/**
+ * Deletes a specific transaction from Google Sheets
+ * @param {Object} data - Data to identify the row to delete
+ * @param {number} data.rowIndex - The row index in the spreadsheet
+ * @param {string} data.userId - The user's unique identifier
+ * @returns {Promise<boolean>} - Success status
+ */
+export const deleteExpenseInSheets = async (data) => {
+  try {
+    const response = await fetch(GOOGLE_SHEETS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain"
+      },
+      body: JSON.stringify({
+        action: "delete",
+        ...data
+      }),
+    });
+
+    if (response.type === 'opaque' || response.ok) {
+      console.log("Data berhasil dihapus dari Google Sheets!");
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Gagal hapus data di Sheets:", error);
+    throw error;
+  }
+};

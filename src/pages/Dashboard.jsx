@@ -20,16 +20,17 @@ import {
   getExpensesFromSheets, 
   getCategoryData as aggregateCategoryData 
 } from '../services/googleSheets.js'
+import Sidebar from '../components/Sidebar'
 import './Dashboard.css'
 
 const SIDEBAR_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard' },
-  { icon: Receipt, label: 'Transaksi', key: 'transactions' },
-  { icon: PieChartIcon, label: 'Analitik', key: 'analytics' },
-  { icon: Target, label: 'Budget', key: 'budget' },
-  { icon: MessageSquare, label: 'WhatsApp', key: 'whatsapp' },
-  { icon: Bell, label: 'Notifikasi', key: 'notifications' },
-  { icon: Settings, label: 'Pengaturan', key: 'settings' },
+  { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard', path: '/dashboard' },
+  { icon: Receipt, label: 'Transaksi', key: 'transactions', path: '/transactions' },
+  { icon: PieChartIcon, label: 'Analitik', key: 'analytics', path: '/analytics' },
+  { icon: Target, label: 'Budget', key: 'budget', path: '/dashboard' },
+  { icon: MessageSquare, label: 'WhatsApp', key: 'whatsapp', path: '/dashboard' },
+  { icon: Bell, label: 'Notifikasi', key: 'notifications', path: '/dashboard' },
+  { icon: Settings, label: 'Pengaturan', key: 'settings', path: '/dashboard' },
 ]
 
 function CustomTooltip({ active, payload, label }) {
@@ -155,44 +156,11 @@ export default function Dashboard() {
   return (
     <div className="dashboard-layout">
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? '' : 'sidebar--collapsed'}`}>
-        <div className="sidebar__top">
-          <Link to="/" className="sidebar__logo" id="sidebar-logo">
-            <div className="navbar__logo-icon"><Zap size={18} /></div>
-            {sidebarOpen && <span className="navbar__logo-text">Weberganize</span>}
-          </Link>
-        </div>
-
-        <nav className="sidebar__nav">
-          {SIDEBAR_ITEMS.map(item => (
-            <button
-              key={item.key}
-              className={`sidebar__item ${activeTab === item.key ? 'sidebar__item--active' : ''}`}
-              onClick={() => setActiveTab(item.key)}
-              id={`sidebar-${item.key}`}
-            >
-              <item.icon size={20} />
-              {sidebarOpen && <span>{item.label}</span>}
-            </button>
-          ))}
-        </nav>
-
-        <div className="sidebar__bottom">
-          <div className="sidebar__user">
-            <div className="sidebar__user-avatar">{user?.name?.[0] || 'U'}</div>
-            {sidebarOpen && (
-              <div className="sidebar__user-info">
-                <span className="sidebar__user-name">{user?.name || 'User'}</span>
-                <span className="sidebar__user-plan">Plan: Gratis</span>
-              </div>
-            )}
-          </div>
-          <button className="sidebar__item sidebar__logout" id="sidebar-logout" onClick={handleLogout}>
-            <LogOut size={20} />
-            {sidebarOpen && <span>Keluar</span>}
-          </button>
-        </div>
-      </aside>
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        user={user} 
+        onLogout={handleLogout} 
+      />
 
       {/* Main Content */}
       <main className="dashboard-main">
@@ -277,7 +245,7 @@ export default function Dashboard() {
             </div>
             <div className="stat-card__value">{isLoading ? '...' : totalItems}</div>
             <div className="stat-card__change stat-card__change--neutral">
-              <span>Transaksi tercatat</span>
+              <span>{totalItems > 0 ? 'Transaksi tercatat' : 'Belum ada data'}</span>
             </div>
           </div>
 
@@ -288,9 +256,11 @@ export default function Dashboard() {
                 <PieChartIcon size={18} />
               </div>
             </div>
-            <div className="stat-card__value">{isLoading ? '...' : `${topCategory.icon} ${topCategory.name}`}</div>
+            <div className="stat-card__value">
+              {isLoading ? '...' : (topCategory.name === '-' ? '-' : `${topCategory.icon} ${topCategory.name}`)}
+            </div>
             <div className="stat-card__change stat-card__change--neutral">
-              <span>{isLoading ? '...' : formatRupiah(topCategory.value)}</span>
+              <span>{isLoading ? '...' : (topCategory.name === '-' ? 'Mulai mencatat di WA' : formatRupiah(topCategory.value))}</span>
             </div>
           </div>
         </div>
@@ -458,7 +428,7 @@ export default function Dashboard() {
             <div className="chart-card__header">
               <h3>📝 Transaksi Terbaru</h3>
               {hasData && (
-                <button className="chart-filter" id="view-all-transactions">Lihat Semua</button>
+                <button className="chart-filter" id="view-all-transactions" onClick={() => navigate('/transactions')}>Lihat Semua</button>
               )}
             </div>
             <div className="recent-list">

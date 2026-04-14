@@ -141,13 +141,13 @@ export default function Information() {
           
           <ExampleChat 
              desc="1. Format Standard & Benar" 
-             userMsg="Makan Nasi Padang 25000" 
+             userMsg="Makan Nasi Padang 25.000" 
              botMsg={"Berhasil dicatat! ✅\n🍔 Nasi Padang — Rp 25.000\nKategori: Makanan\n───────────────────\n💰 Sisa Saldo Anda: Rp 1.975.000"} 
           />
 
           <ExampleChat 
              desc="2. Multi-Input (Banyak Sekaligus) - Paling Sakti!" 
-             userMsg={"Beli Bensin 30000\nEs Teh 5000\nParkir 2000"}
+             userMsg={"Beli Bensin 30.000\nEs Teh 5.000\nParkir 2.000"}
              botMsg={"Sip! Berhasil mencatat 3 pengeluaran sekaligus! ✅\n\n🚗 Bensin — Rp 30.000 (Kategori: Transportasi)\n🍔 Es Teh — Rp 5.000 (Kategori: Makanan)\n🏷️ Parkir — Rp 2.000 (Kategori: Transportasi)\n───────────────────\nTotal dicatat: Rp 37.000\n💰 Sisa Saldo Anda: Rp 1.938.000"} 
           />
 
@@ -159,13 +159,13 @@ export default function Information() {
 
           <ExampleChat 
              desc="4. Format Meme / Nyeleneh (Admin Gaul)" 
-             userMsg={"Bayar Hutang Pinjol 500000 😭"} 
+             userMsg={"Bayar Hutang Pinjol 500.000 😭"} 
              botMsg={"Tercatat dengan iringan air mata... 🥲✅\n💸 Hutang Pinjol — Rp 500.000\nKategori: Tagihan\n───────────────────\n💰 Sisa Saldo Anda: Rp 1.438.000\nSemangat lunasinnya kak, jangan gali lubang tutup sumur lagi ya!"} 
           />
 
           <ExampleChat 
              desc="5. Entri Berulang / Ganda (Bot Paham Konteks)" 
-             userMsg={"Bensin lagi 20000 gara-gara muter-muter"} 
+             userMsg={"Bensin lagi 20.000 gara-gara muter-muter"} 
              botMsg={"Berhasil dicatat! ✅\n🚗 Bensin — Rp 20.000 (Kategori: Transportasi)\n\n💡 Info AI: Hari ini Anda sudah 2x membeli Bensin. Total pengeluaran bensin hari ini: Rp 50.000.\n───────────────────\n💰 Sisa Saldo Anda: Rp 1.418.000"} 
           />
         </>
@@ -183,19 +183,19 @@ export default function Information() {
 
           <ExampleChat 
              desc="1. Set Budget Kategori Baru" 
-             userMsg={"budget makanan 2000000"} 
+             userMsg={"budget makanan 2.000.000"} 
              botMsg={"Budget berhasil diatur! 🎯\n\n🍔 Kategori: Makanan\n💰 Batas: Rp 2.000.000 / bulan\n\nSekarang sistem akan memantau pengeluaran makanan kamu secara otomatis. Kalau sudah 80% terpakai, kamu bakal dapat peringatan!"} 
           />
 
           <ExampleChat 
              desc="2. Update Budget yang Sudah Ada (Naik Gaji 🎉)" 
-             userMsg={"budget transportasi 1500000"} 
+             userMsg={"budget transportasi 1.500.000"} 
              botMsg={"Budget Transportasi diperbarui! ✅\n\n🚗 Kategori: Transportasi\n💰 Batas Baru: Rp 1.500.000 / bulan\n📈 Sebelumnya: Rp 1.000.000\n\nWah naik budget, semoga karena naik gaji ya bukan karena tarif Ojol naik! 😄"} 
           />
 
           <ExampleChat 
              desc="3. Set Multi-Budget Sekaligus" 
-             userMsg={"budget hiburan 500000\nbudget belanja 800000\nbudget kesehatan 300000"} 
+             userMsg={"budget hiburan 500.000\nbudget belanja 800.000\nbudget kesehatan 300.000"} 
              botMsg={"3 Budget berhasil diatur sekaligus! 🎯✅\n\n🎮 Hiburan → Rp 500.000\n🛍️ Belanja → Rp 800.000\n💊 Kesehatan → Rp 300.000\n\nTotal budget baru: Rp 1.600.000 / bulan. Mantap, sudah kayak CFO pribadi nih!"} 
           />
 

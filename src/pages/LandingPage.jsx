@@ -6,6 +6,7 @@ import {
   Star, Check, ChevronRight, Send
 } from 'lucide-react'
 import Navbar from '../components/Navbar.jsx'
+import logo from '../assets/logo.svg'
 import './LandingPage.css'
 
 const CHAT_MESSAGES = [
@@ -325,7 +326,7 @@ export default function LandingPage() {
           <div className="footer__inner">
             <div className="footer__brand">
               <div className="navbar__logo">
-                <img src="/logo.png" alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
+                <img src={logo} alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
                 <span className="navbar__logo-text">LedgerLink</span>
               </div>
               <p className="footer__desc">Smart expense tracking via WhatsApp, powered by AI.</p>

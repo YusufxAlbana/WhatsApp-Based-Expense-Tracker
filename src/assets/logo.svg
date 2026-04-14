@@ -1,0 +1,26 @@
+<svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Elegant Green Gradient Background -->
+  <rect x="48" y="48" width="416" height="416" rx="120" fill="url(#baseGrad)" />
+  
+  <!-- Chat Tail subtle curve inside -->
+  <path d="M48 350 L48 464 L162 464 C100 464 48 412 48 350 Z" fill="#047857" />
+  <path d="M48 340 L48 454 L152 454 C90 454 48 402 48 340 Z" fill="url(#baseGrad)" />
+  
+  <!-- "L L" Ledger Link geometric graphic -->
+  <path d="M190 180 V330 H260" stroke="white" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M280 230 V330 H350" stroke="#A7F3D0" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Link Connection Dots -->
+  <circle cx="260" cy="180" r="22" fill="white" />
+  <circle cx="350" cy="230" r="22" fill="#A7F3D0" />
+
+  <!-- A subtle connecting line between the two LLs -->
+  <path d="M260 180 L350 230" stroke="white" stroke-width="12" stroke-dasharray="16 12" stroke-linecap="round" />
+
+  <defs>
+    <linearGradient id="baseGrad" x1="48" y1="48" x2="464" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399" />
+      <stop offset="1" stop-color="#047857" />
+    </linearGradient>
+  </defs>
+</svg>

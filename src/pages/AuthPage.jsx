@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { Zap, Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react'
 import { sendToGoogleSheets } from '../services/googleSheets.js'
+import logo from '../assets/logo.svg'
 import './AuthPage.css'
 
 export default function AuthPage() {
@@ -64,7 +65,7 @@ export default function AuthPage() {
 
       <div className="auth-container">
         <Link to="/" className="auth-logo" id="auth-logo">
-          <img src="/logo.png" alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
+          <img src={logo} alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
           <span className="navbar__logo-text">LedgerLink</span>
         </Link>
 

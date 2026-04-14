@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, Zap } from 'lucide-react'
+import logo from '../assets/logo.svg'
 import './Navbar.css'
 
 export default function Navbar({ variant = 'landing' }) {
@@ -18,7 +19,7 @@ export default function Navbar({ variant = 'landing' }) {
     <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''} ${variant === 'dashboard' ? 'navbar--dashboard' : ''}`}>
       <div className="navbar__inner container">
         <Link to="/" className="navbar__logo" id="navbar-logo">
-          <img src="/logo.png" alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
+          <img src={logo} alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
           <span className="navbar__logo-text">LedgerLink</span>
         </Link>
 

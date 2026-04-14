@@ -3,6 +3,7 @@ import {
   Zap, LayoutDashboard, Receipt, PieChart as PieChartIcon,
   Target, MessageSquare, Bell, Settings, LogOut, HelpCircle
 } from 'lucide-react'
+import logo from '../assets/logo.svg'
 import './Sidebar.css'
 
 const SIDEBAR_ITEMS = [
@@ -28,7 +29,7 @@ export default function Sidebar({ isOpen, user, onLogout }) {
     <aside className={`sidebar ${isOpen ? '' : 'sidebar--collapsed'}`}>
       <div className="sidebar__top">
         <Link to="/dashboard" className="sidebar__logo">
-          <img src="/logo.png" alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
+          <img src={logo} alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
           {isOpen && <span className="navbar__logo-text">LedgerLink</span>}
         </Link>
       </div>

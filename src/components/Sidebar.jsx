@@ -12,7 +12,7 @@ const SIDEBAR_ITEMS = [
   { icon: Target,          label: 'Budget',      key: 'budget',        path: '/budget' },
   { icon: MessageSquare,   label: 'WhatsApp',    key: 'whatsapp',      path: null }, // belum tersedia
   { icon: Bell,            label: 'Notifikasi',  key: 'notifications', path: null }, // belum tersedia
-  { icon: Settings,        label: 'Pengaturan',  key: 'settings',      path: null }, // belum tersedia
+  { icon: Settings,        label: 'Pengaturan',  key: 'settings',      path: '/settings' },
 ]
 
 export default function Sidebar({ isOpen, user, onLogout }) {

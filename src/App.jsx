@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import TransactionHistory from './pages/TransactionHistory.jsx'
 import Analytics from './pages/Analytics.jsx'
 import Budgets from './pages/Budgets.jsx'
+import Settings from './pages/Settings.jsx'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Route path="/transactions" element={<TransactionHistory />} />
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/budget" element={<Budgets />} />
+      <Route path="/settings" element={<Settings />} />
     </Routes>
   )
 }

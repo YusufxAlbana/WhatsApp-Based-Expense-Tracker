@@ -18,10 +18,8 @@ export default function Navbar({ variant = 'landing' }) {
     <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''} ${variant === 'dashboard' ? 'navbar--dashboard' : ''}`}>
       <div className="navbar__inner container">
         <Link to="/" className="navbar__logo" id="navbar-logo">
-          <div className="navbar__logo-icon">
-            <Zap size={20} />
-          </div>
-          <span className="navbar__logo-text">Weberganize</span>
+          <img src="/logo.png" alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
+          <span className="navbar__logo-text">LedgerLink</span>
         </Link>
 
         {variant === 'landing' && (

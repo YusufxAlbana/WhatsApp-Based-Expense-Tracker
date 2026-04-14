@@ -110,7 +110,7 @@ export default function LandingPage() {
               <div className="phone-mockup__header">
                 <div className="phone-mockup__avatar">W</div>
                 <div>
-                  <div className="phone-mockup__name">Weberganize Bot</div>
+                  <div className="phone-mockup__name">LedgerLink Bot</div>
                   <div className="phone-mockup__status">online</div>
                 </div>
               </div>
@@ -214,7 +214,7 @@ export default function LandingPage() {
               num="01"
               icon={<Smartphone size={32} />}
               title="Chat di WhatsApp"
-              desc="Kirim pesan ke bot Weberganize. Tulis pengeluaranmu dalam bahasa apapun."
+              desc="Kirim pesan ke bot LedgerLink. Tulis pengeluaranmu dalam bahasa apapun."
               color="var(--brand-primary)"
             />
             <div className="steps__connector">
@@ -325,8 +325,8 @@ export default function LandingPage() {
           <div className="footer__inner">
             <div className="footer__brand">
               <div className="navbar__logo">
-                <div className="navbar__logo-icon"><Zap size={20} /></div>
-                <span className="navbar__logo-text">Weberganize</span>
+                <img src="/logo.png" alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
+                <span className="navbar__logo-text">LedgerLink</span>
               </div>
               <p className="footer__desc">Smart expense tracking via WhatsApp, powered by AI.</p>
             </div>
@@ -345,7 +345,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="footer__bottom">
-            <span>© 2026 Weberganize. All rights reserved.</span>
+            <span>© 2026 LedgerLink. All rights reserved.</span>
           </div>
         </div>
       </footer>

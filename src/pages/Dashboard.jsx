@@ -457,7 +457,7 @@ export default function Dashboard() {
           <div className="wa-recap__content">
             <h4>Status WhatsApp Bot</h4>
             {lastExpense ? (
-              <p>Terakhir tercatat: <strong>{lastExpense.item} {formatRupiah(lastExpense.amount)}</strong> — {(lastExpense.tanggal || lastExpense.created_at) ? getRelativeTime(lastExpense.tanggal || lastExpense.created_at) : 'Baru saja'}. Bot Weberganize aktif dan menunggu pesan berikutnya.</p>
+              <p>Terakhir tercatat: <strong>{lastExpense.item} {formatRupiah(lastExpense.amount)}</strong> — {(lastExpense.tanggal || lastExpense.created_at) ? getRelativeTime(lastExpense.tanggal || lastExpense.created_at) : 'Baru saja'}. Bot LedgerLink aktif dan menunggu pesan berikutnya.</p>
             ) : (
               <p>Belum ada transaksi yang tercatat dari WhatsApp. Kirim pesan ke bot untuk mulai mencatat pengeluaranmu!</p>
             )}

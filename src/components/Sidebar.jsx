@@ -28,8 +28,8 @@ export default function Sidebar({ isOpen, user, onLogout }) {
     <aside className={`sidebar ${isOpen ? '' : 'sidebar--collapsed'}`}>
       <div className="sidebar__top">
         <Link to="/dashboard" className="sidebar__logo">
-          <div className="navbar__logo-icon"><Zap size={18} /></div>
-          {isOpen && <span className="navbar__logo-text">Weberganize</span>}
+          <img src="/logo.png" alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
+          {isOpen && <span className="navbar__logo-text">LedgerLink</span>}
         </Link>
       </div>
 

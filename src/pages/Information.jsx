@@ -78,7 +78,7 @@ export default function Information() {
       color: '#3b82f6',
       content: (
         <>
-          <p>Weberganize sangat unik karena Anda tidak harus selalu membuka website untuk mencatat pengeluaran. Anda bisa mengirim chat langsung ke Bot WhatsApp Weberganize.</p>
+          <p>LedgerLink sangat unik karena Anda tidak harus selalu membuka website untuk mencatat pengeluaran. Anda bisa mengirim chat langsung ke Bot WhatsApp LedgerLink.</p>
           <ul>
             <li><strong>Mencatat Cepat:</strong> Cukup kirim chat "Makan siang 50000" dan bot akan otomatis mendeteksi kategori, nominal, dan mencatatnya.</li>
             <li><strong>Google Sheets:</strong> Semua data Anda aman disimpan di Google Sheets Anda sendiri, bukan di server kami. Anda memegang kendali penuh atas data transaksi Anda.</li>
@@ -123,7 +123,7 @@ export default function Information() {
             <h1 className="dashboard-topbar__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                <Info size={26} className="text-brand" /> Pusat Informasi & Bantuan
             </h1>
-            <p className="dashboard-topbar__subtitle">Pelajari fitur-fitur Weberganize dan cara menggunakannya dengan maksimal.</p>
+            <p className="dashboard-topbar__subtitle">Pelajari fitur-fitur LedgerLink dan cara menggunakannya dengan maksimal.</p>
           </div>
         </header>
 
@@ -135,7 +135,7 @@ export default function Information() {
                 <Zap size={28} className="text-brand" />
               </div>
               <div>
-                <h2>Selamat datang di Panduan Weberganize</h2>
+                <h2>Selamat datang di Panduan LedgerLink</h2>
                 <p>Aplikasi pintar yang memadukan fleksibilitas Google Sheets dengan kecepatan WhatsApp Bot. Temukan semua penjelasan fitur di bawah ini.</p>
               </div>
             </div>

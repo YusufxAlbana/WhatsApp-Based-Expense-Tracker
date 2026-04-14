@@ -64,8 +64,8 @@ export default function AuthPage() {
 
       <div className="auth-container">
         <Link to="/" className="auth-logo" id="auth-logo">
-          <div className="navbar__logo-icon"><Zap size={20} /></div>
-          <span className="navbar__logo-text">Weberganize</span>
+          <img src="/logo.png" alt="LedgerLink Logo" style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover' }} />
+          <span className="navbar__logo-text">LedgerLink</span>
         </Link>
 
         <div className="auth-card glass-card">

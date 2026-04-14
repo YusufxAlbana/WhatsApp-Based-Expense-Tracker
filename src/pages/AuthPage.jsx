@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { Zap, Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react'
+import { sendToGoogleSheets } from '../services/googleSheets.js'
 import './AuthPage.css'
 
 export default function AuthPage() {
@@ -23,22 +24,34 @@ export default function AuthPage() {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     
-    // Simulate auth & save to localStorage
-    setTimeout(() => {
-      const user = {
-        name: mode === 'register' ? formData.name : formData.email.split('@')[0],
-        email: formData.email,
-        id: formData.email // Using email as simplified userId for now
+    const user = {
+      name: mode === 'register' ? formData.name : formData.email.split('@')[0],
+      email: formData.email,
+      id: formData.email // Using email as simplified userId for now
+    }
+
+    if (mode === 'register') {
+      try {
+        await sendToGoogleSheets({
+          action: 'register',
+          userId: user.id
+        })
+      } catch (err) {
+        console.error('Failed to register user to sheets', err)
       }
-      localStorage.setItem('weberganize_user', JSON.stringify(user))
-      
+    }
+
+    localStorage.setItem('weberganize_user', JSON.stringify(user))
+    
+    // Simulate slight loading delay for UX
+    setTimeout(() => {
       setLoading(false)
       navigate('/dashboard')
-    }, 1500)
+    }, 800)
   }
 
   return (

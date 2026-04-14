@@ -94,6 +94,21 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // ── REGISTER (Pendaftaran Akun Baru) ──
+    if (action === 'register') {
+      sheet.appendRow([
+        payload.userId || '',
+        'Akun Berhasil Terdaftar',
+        0,
+        'Info',
+        new Date().toISOString().split('T')[0],
+        new Date().toISOString()
+      ]);
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     // ── UPDATE ──
     if (action === 'update') {
       const rowIndex = payload.rowIndex;

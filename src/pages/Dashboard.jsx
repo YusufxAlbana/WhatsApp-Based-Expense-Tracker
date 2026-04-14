@@ -57,8 +57,15 @@ export default function Dashboard() {
   
   // User state from localStorage
   const [user, setUser] = useState(null)
-  const [expenses, setExpenses] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [expenses, setExpenses] = useState(() => {
+    try {
+      const cached = localStorage.getItem('weberganize_expenses')
+      return cached ? JSON.parse(cached) : []
+    } catch {
+      return []
+    }
+  })
+  const [isLoading, setIsLoading] = useState(() => !localStorage.getItem('weberganize_expenses'))
 
   useEffect(() => {
     const savedUser = localStorage.getItem('weberganize_user')
@@ -70,21 +77,30 @@ export default function Dashboard() {
   }, [navigate])
 
   // Fetch data from Sheets using userId
-  const refreshData = async () => {
+  const refreshData = async (isBackground = false) => {
     if (!user?.id) return
-    setIsLoading(true)
-    const data = await getExpensesFromSheets(user.id)
-    if (data && data.length > 0) {
-      setExpenses(data)
-    } else {
-      setExpenses([])
+    if (!isBackground) setIsLoading(true)
+    
+    try {
+      const data = await getExpensesFromSheets(user.id)
+      if (data && data.length > 0) {
+        setExpenses(data)
+        localStorage.setItem('weberganize_expenses', JSON.stringify(data))
+      } else {
+        setExpenses([])
+        localStorage.setItem('weberganize_expenses', JSON.stringify([]))
+      }
+    } catch (error) {
+      console.error('Sync failed', error)
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   useEffect(() => {
     if (user) {
-      refreshData()
+      // Sync di background (tanpa loading screen) secara instan saat halaman dibuka
+      refreshData(true)
     }
   }, [user])
 

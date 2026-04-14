@@ -18,6 +18,63 @@ import Sidebar from '../components/Sidebar'
 import './Dashboard.css'
 import './TransactionHistory.css'
 
+const CustomDropdownMenu = ({ value, options, onChange, icon }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selected = options.find(o => o.value === value) || options[0];
+
+  return (
+    <div className="txn-custom-dropdown" style={{ position: 'relative', zIndex: isOpen ? 1000 : 1 }}>
+      <button 
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="txn-filter-select"
+        style={{ cursor: 'pointer', background: isOpen ? 'rgba(255,255,255,0.06)' : '', width: '100%', justifyContent: 'space-between' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {icon}
+          <span style={{ fontSize: '0.85rem' }}>{selected?.label}</span>
+        </div>
+      </button>
+
+      {isOpen && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setIsOpen(false)} />
+          <ul 
+            className="glass-card animate-slide-up"
+            style={{ 
+              position: 'absolute', top: '100%', right: 0, marginTop: '8px', zIndex: 9999, 
+              minWidth: '200px', padding: '8px', display: 'flex', flexDirection: 'column', 
+              gap: '4px', listStyle: 'none', background: 'var(--bg-card)',
+              border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)',
+              maxHeight: '300px', overflowY: 'auto'
+            }}
+          >
+            {options.map(opt => (
+              <li 
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                style={{ 
+                  padding: '8px 12px', cursor: 'pointer', borderRadius: '8px', fontSize: '0.85rem',
+                  background: opt.value === value ? 'rgba(37, 211, 102, 0.1)' : 'transparent', 
+                  color: opt.value === value ? 'var(--brand-primary)' : 'var(--text-primary)',
+                  fontWeight: opt.value === value ? '600' : '500',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  transition: 'background 0.2s' 
+                }}
+                onMouseEnter={(e) => { if(opt.value!==value) e.target.style.background = 'rgba(255,255,255,0.04)' }}
+                onMouseLeave={(e) => { if(opt.value!==value) e.target.style.background = 'transparent' }}
+              >
+                {opt.icon && <span>{opt.icon}</span>}
+                {opt.label}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+};
+
 const ITEMS_PER_PAGE = 10
 
 export default function TransactionHistory() {
@@ -227,6 +284,18 @@ export default function TransactionHistory() {
   const totalAmount = filteredAndSorted.reduce((sum, e) => sum + Number(e.amount), 0)
   const uniqueCategories = [...new Set(expenses.map(e => e.category))]
 
+  const categoryOptions = [
+    { value: 'all', label: 'Semua Kategori', icon: <SlidersHorizontal size={14}/> },
+    ...CATEGORIES.map(cat => ({ value: cat.key, label: cat.label, icon: cat.icon }))
+  ]
+
+  const sortOptions = [
+    { value: 'date-desc', label: 'Terbaru', icon: <ArrowUpDown size={14}/> },
+    { value: 'date-asc', label: 'Terlama', icon: '' },
+    { value: 'amount-desc', label: 'Terbesar', icon: '' },
+    { value: 'amount-asc', label: 'Terkecil', icon: '' }
+  ]
+
   return (
     <div className="dashboard-layout">
       {/* Sidebar */}
@@ -304,35 +373,19 @@ export default function TransactionHistory() {
           </div>
 
           <div className="txn-filters__actions">
-            <div className="txn-filter-select">
-              <SlidersHorizontal size={14} />
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                id="txn-category-filter"
-              >
-                <option value="all">Semua Kategori</option>
-                {CATEGORIES.map(cat => (
-                  <option key={cat.key} value={cat.key}>
-                    {cat.icon} {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CustomDropdownMenu 
+              value={categoryFilter} 
+              options={categoryOptions} 
+              onChange={setCategoryFilter} 
+              icon={<SlidersHorizontal size={14} />} 
+            />
 
-            <div className="txn-filter-select">
-              <ArrowUpDown size={14} />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                id="txn-sort-select"
-              >
-                <option value="date-desc">Terbaru</option>
-                <option value="date-asc">Terlama</option>
-                <option value="amount-desc">Terbesar</option>
-                <option value="amount-asc">Terkecil</option>
-              </select>
-            </div>
+            <CustomDropdownMenu 
+              value={sortBy} 
+              options={sortOptions} 
+              onChange={setSortBy} 
+              icon={<ArrowUpDown size={14} />} 
+            />
           </div>
         </div>
 

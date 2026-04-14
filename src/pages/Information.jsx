@@ -7,7 +7,26 @@ import {
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import './Dashboard.css'
+import './Dashboard.css'
 import './Information.css'
+
+const ExampleChat = ({ userMsg, botMsg, desc }) => (
+  <div className="info-chat-wrapper" style={{ marginBottom: '2rem' }}>
+    <h5 style={{ marginBottom: '1rem', color: 'var(--brand-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <Smartphone size={18} /> {desc}
+    </h5>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'var(--bg-primary)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.05)' }}>
+      {/* User Bubble */}
+      <div style={{ alignSelf: 'flex-end', background: 'var(--brand-primary)', color: '#000', fontWeight: '500', padding: '0.75rem 1rem', borderRadius: '16px 16px 2px 16px', maxWidth: '85%', fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>
+         {userMsg}
+      </div>
+      {/* Bot Bubble */}
+      <div style={{ alignSelf: 'flex-start', background: 'var(--bg-card)', color: 'var(--text-primary)', padding: '0.75rem 1rem', borderRadius: '16px 16px 16px 2px', maxWidth: '85%', fontSize: '0.95rem', border: '1px solid var(--border-color)', whiteSpace: 'pre-wrap' }}>
+         {botMsg}
+      </div>
+    </div>
+  </div>
+)
 
 export default function Information() {
   const navigate = useNavigate()
@@ -107,6 +126,48 @@ export default function Information() {
         <>
           <p>Sistem frontend website kami melakukan request langsung ke URL Google Apps Script Anda (tidak melalui server pihak ketiga). Kami menggunakan teknik <strong>JSONP (Script Injection)</strong> agar browser Anda tidak terhalang oleh pembatasan *CORS (Cross-Origin Resource Sharing)*.</p>
           <p>Oleh karena itu, sangat penting bagi URL Endpoint Apps Script (doGet/doPost) Anda siap menerima mode JSONP agar data tampil dengan sempurna di Dashboard dan riwayat Transaksi.</p>
+        </>
+      )
+    },
+    {
+      id: 'how-to',
+      title: 'Contoh Format Perintah WhatsApp (Lengkap)',
+      icon: <Smartphone size={20} />,
+      color: '#10b981',
+      badge: 'WAJIB BACA',
+      content: (
+        <>
+          <p style={{ marginBottom: '1.5rem' }}>Berikut adalah berbagai varasi cara mencatat pengeluaran Anda. Cukup ketik formatnya dan bot LedgerLink akan otomatis mengerjakannya!</p>
+          
+          <ExampleChat 
+             desc="1. Format Standard & Benar" 
+             userMsg="Makan Nasi Padang 25000" 
+             botMsg={"Berhasil dicatat! ✅\n🍔 Nasi Padang — Rp 25.000\nKategori: Makanan\n───────────────────\n💰 Sisa Saldo Anda: Rp 1.975.000"} 
+          />
+
+          <ExampleChat 
+             desc="2. Multi-Input (Banyak Sekaligus) - Paling Sakti!" 
+             userMsg={"Beli Bensin 30000\nEs Teh 5000\nParkir 2000"}
+             botMsg={"Sip! Berhasil mencatat 3 pengeluaran sekaligus! ✅\n\n🚗 Bensin — Rp 30.000 (Kategori: Transportasi)\n🍔 Es Teh — Rp 5.000 (Kategori: Makanan)\n🏷️ Parkir — Rp 2.000 (Kategori: Transportasi)\n───────────────────\nTotal dicatat: Rp 37.000\n💰 Sisa Saldo Anda: Rp 1.938.000"} 
+          />
+
+          <ExampleChat 
+             desc="3. Salah Ketik / Lupa Angka (Ditolak Sistem)" 
+             userMsg={"Tadi aku habis jajan cilok enak banget di depan sekolah"} 
+             botMsg={"Sistem bingung! 😵‍💫\nKamu jajan cilok sih oke, tapi harganya berapa bosque?\nFormat wajib: [Nama Item] [Harga]"} 
+          />
+
+          <ExampleChat 
+             desc="4. Format Meme / Nyeleneh (Admin Gaul)" 
+             userMsg={"Bayar Hutang Pinjol 500000 😭"} 
+             botMsg={"Tercatat dengan iringan air mata... 🥲✅\n💸 Hutang Pinjol — Rp 500.000\nKategori: Tagihan\n───────────────────\n💰 Sisa Saldo Anda: Rp 1.438.000\nSemangat lunasinnya kak, jangan gali lubang tutup sumur lagi ya!"} 
+          />
+
+          <ExampleChat 
+             desc="5. Entri Berulang / Ganda (Bot Paham Konteks)" 
+             userMsg={"Bensin lagi 20000 gara-gara muter-muter"} 
+             botMsg={"Berhasil dicatat! ✅\n🚗 Bensin — Rp 20.000 (Kategori: Transportasi)\n\n💡 Info AI: Hari ini Anda sudah 2x membeli Bensin. Total pengeluaran bensin hari ini: Rp 50.000.\n───────────────────\n💰 Sisa Saldo Anda: Rp 1.418.000"} 
+          />
         </>
       )
     }

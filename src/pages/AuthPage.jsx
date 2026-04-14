@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { Zap, Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react'
-import { sendToGoogleSheets } from '../services/googleSheets.js'
+import { sendToGoogleSheets, loginUserViaSheets } from '../services/googleSheets.js'
 import logo from '../assets/logo.svg'
 import './AuthPage.css'
 
@@ -39,20 +39,44 @@ export default function AuthPage() {
       try {
         await sendToGoogleSheets({
           action: 'register',
-          userId: user.id
+          userId: user.id,
+          password: formData.password,
+          name: formData.name
         })
+        localStorage.setItem('weberganize_user', JSON.stringify(user))
+        
+        setTimeout(() => {
+          setLoading(false)
+          navigate('/dashboard')
+        }, 800)
       } catch (err) {
         console.error('Failed to register user to sheets', err)
+        alert('Gagal mendaftar, silakan periksa koneksi Anda.')
+        setLoading(false)
+      }
+    } else {
+      // ── LOGIN MODE (Strict Validation via Google Sheets) ──
+      try {
+        const resp = await loginUserViaSheets(user.id, formData.password)
+        if (!resp.success) {
+          setLoading(false)
+          alert(resp.error || 'Login gagal.')
+          return
+        }
+        
+        // Login berhasil! Data kredensial cocok dengan Spreadsheet
+        const confirmedUser = resp.user
+        localStorage.setItem('weberganize_user', JSON.stringify(confirmedUser))
+        
+        setTimeout(() => {
+          setLoading(false)
+          navigate('/dashboard')
+        }, 500)
+      } catch (err) {
+        setLoading(false)
+        alert('Terjadi kesalahan jaringan atau server Google pelan.')
       }
     }
-
-    localStorage.setItem('weberganize_user', JSON.stringify(user))
-    
-    // Simulate slight loading delay for UX
-    setTimeout(() => {
-      setLoading(false)
-      navigate('/dashboard')
-    }, 800)
   }
 
   return (

@@ -13,7 +13,7 @@ const SIDEBAR_ITEMS = [
   { icon: Target,          label: 'Budget',      key: 'budget',        path: '/budget' },
   { icon: HelpCircle,      label: 'Informasi',   key: 'info',          path: '/info' },
   { icon: MessageSquare,   label: 'WhatsApp',    key: 'whatsapp',      path: null }, // belum tersedia
-  { icon: Bell,            label: 'Notifikasi',  key: 'notifications', path: null }, // belum tersedia
+  { icon: Bell,            label: 'Notifikasi',  key: 'notifications', path: '/notifications' },
   { icon: Settings,        label: 'Pengaturan',  key: 'settings',      path: '/settings' },
 ]
 

@@ -159,6 +159,26 @@ export default function Dashboard() {
     }
   }
 
+  // Temporary function to test inserting data
+  const handleTestInsert = async () => {
+    setIsSyncing(true)
+    try {
+      await sendToGoogleSheets({
+        action: 'insert',
+        userId: user.id,
+        item: 'Test Pengeluaran',
+        amount: 25000,
+        category: 'Makanan',
+        tanggal: new Date().toISOString().split('T')[0]
+      })
+      alert('Data test berhasil dikirim ke script! Silakan tunggu 2 detik halaman akan refresh otomatis.')
+      setTimeout(() => refreshData(false), 2000)
+    } catch (e) {
+      alert('Error: ' + e.message)
+    }
+    setIsSyncing(false)
+  }
+
   return (
     <div className="dashboard-layout">
       {/* Sidebar */}
@@ -177,6 +197,9 @@ export default function Dashboard() {
             <p className="dashboard-topbar__subtitle">Selamat datang kembali, {user?.name || 'User'} 👋</p>
           </div>
           <div className="dashboard-topbar__right">
+            <button onClick={handleTestInsert} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
+              <Plus size={14} /> Test Data
+            </button>
             <div className="dashboard-topbar__search">
               <Search size={16} />
               <input type="text" placeholder="Cari transaksi..." id="dashboard-search" />

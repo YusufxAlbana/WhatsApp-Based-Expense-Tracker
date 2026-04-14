@@ -102,6 +102,52 @@ export const getExpensesFromSheets = (userId) => {
 }
 
 /**
+ * Validates user login via Google Sheets using JSONP
+ * @param {string} userId - The user's unique identifier (email)
+ * @param {string} password - The user's password
+ * @returns {Promise<Object>} - Success status and user data or error message
+ */
+export const loginUserViaSheets = (userId, password) => {
+  return new Promise((resolve) => {
+    const callbackName = `gsLoginCallback_${Date.now()}`
+    const url = `${import.meta.env.VITE_GOOGLE_SHEETS_URL}?action=login&userId=${encodeURIComponent(userId)}&password=${encodeURIComponent(password)}&callback=${callbackName}`
+
+    window[callbackName] = (data) => {
+      try {
+        resolve(data)
+      } catch {
+        resolve({ success: false, error: 'Format respons tidak sesuai dari server' })
+      } finally {
+        delete window[callbackName]
+        if (script.parentNode) script.parentNode.removeChild(script)
+      }
+    }
+
+    const script = document.createElement('script')
+    script.src = url
+    script.onerror = () => {
+      resolve({ success: false, error: 'Gagal menghubungi server Google Sheets' })
+      delete window[callbackName]
+      if (script.parentNode) script.parentNode.removeChild(script)
+    }
+
+    const timeout = setTimeout(() => {
+      resolve({ success: false, error: 'Koneksi lambat (timeout)' })
+      delete window[callbackName]
+      if (script.parentNode) script.parentNode.removeChild(script)
+    }, 10000)
+
+    const originalCallback = window[callbackName]
+    window[callbackName] = (data) => {
+      clearTimeout(timeout)
+      originalCallback(data)
+    }
+
+    document.head.appendChild(script)
+  })
+}
+
+/**
  * Helper to process raw expenses into category-based data for charts
  * @param {Array} expenses - Array of transaction objects
  * @returns {Array} - Aggregated category data

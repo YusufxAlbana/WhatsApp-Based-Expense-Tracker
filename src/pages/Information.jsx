@@ -170,6 +170,42 @@ export default function Information() {
           />
         </>
       )
+    },
+    {
+      id: 'budget-format',
+      title: 'Cara Set Budget via WhatsApp (Format Lengkap)',
+      icon: <Target size={20} />,
+      color: '#f59e0b',
+      badge: 'Budget',
+      content: (
+        <>
+          <p style={{ marginBottom: '1.5rem' }}>Selain lewat website, Anda bisa atur batas anggaran per kategori langsung dari WhatsApp! Format-nya super simpel:</p>
+
+          <ExampleChat 
+             desc="1. Set Budget Kategori Baru" 
+             userMsg={"budget makanan 2000000"} 
+             botMsg={"Budget berhasil diatur! 🎯\n\n🍔 Kategori: Makanan\n💰 Batas: Rp 2.000.000 / bulan\n\nSekarang sistem akan memantau pengeluaran makanan kamu secara otomatis. Kalau sudah 80% terpakai, kamu bakal dapat peringatan!"} 
+          />
+
+          <ExampleChat 
+             desc="2. Update Budget yang Sudah Ada (Naik Gaji 🎉)" 
+             userMsg={"budget transportasi 1500000"} 
+             botMsg={"Budget Transportasi diperbarui! ✅\n\n🚗 Kategori: Transportasi\n💰 Batas Baru: Rp 1.500.000 / bulan\n📈 Sebelumnya: Rp 1.000.000\n\nWah naik budget, semoga karena naik gaji ya bukan karena tarif Ojol naik! 😄"} 
+          />
+
+          <ExampleChat 
+             desc="3. Set Multi-Budget Sekaligus" 
+             userMsg={"budget hiburan 500000\nbudget belanja 800000\nbudget kesehatan 300000"} 
+             botMsg={"3 Budget berhasil diatur sekaligus! 🎯✅\n\n🎮 Hiburan → Rp 500.000\n🛍️ Belanja → Rp 800.000\n💊 Kesehatan → Rp 300.000\n\nTotal budget baru: Rp 1.600.000 / bulan. Mantap, sudah kayak CFO pribadi nih!"} 
+          />
+
+          <ExampleChat 
+             desc="4. Cek Sisa Budget" 
+             userMsg={"cek budget"} 
+             botMsg={"📊 Laporan Budget Bulan Ini:\n\n🍔 Makanan: Rp 850.000 / 2.000.000 (42%)\n🚗 Transportasi: Rp 400.000 / 1.500.000 (27%)\n⚠️ Hiburan: Rp 450.000 / 500.000 (90%) — HAMPIR HABIS!\n\n───────────────────\nTotal: Rp 1.700.000 dari Rp 4.000.000 terpakai."} 
+          />
+        </>
+      )
     }
   ]
 

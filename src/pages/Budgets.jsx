@@ -104,9 +104,7 @@ export default function Budgets() {
   const [isModalOpen, setIsModalOpen]   = useState(false)
   const [editingBudget, setEditingBudget] = useState(null)
   const EMPTY_FORM = {
-    category: '', limit: '', threshold: 80,
-    cycle: 'Bulanan', priority: 'Wajib',
-    rollover: false, color: '#25D366', notes: ''
+    category: '', limit: '', color: '#25D366', notes: ''
   }
   const [form, setForm] = useState(EMPTY_FORM)
 
@@ -159,7 +157,7 @@ export default function Budgets() {
       const limit     = Number(b.limit) || 1
       const remaining = limit - spent
       const percent   = Math.min(Math.round((spent / limit) * 100), 999)
-      const isOver    = percent >= Number(b.threshold)
+      const isOver    = percent >= 80
       const isCritical = percent >= 100
 
       return { ...b, spent, remaining, percent, isOver, isCritical }
@@ -321,10 +319,7 @@ export default function Budgets() {
                     </div>
                     <div>
                       <h3 className="cat-name">{b.category}</h3>
-                      <span className="cat-meta">
-                        {b.priority} &nbsp;·&nbsp; {b.cycle}
-                        {b.rollover && <> &nbsp;·&nbsp; <span className="rollover-badge">Rollover</span></>}
-                      </span>
+                      <span className="cat-meta">Budget Bulanan</span>
                     </div>
                   </div>
                   <div className="budget-card-actions">
@@ -405,77 +400,44 @@ export default function Budgets() {
             </div>
 
             <form onSubmit={handleSave} className="modal-form">
-              <div className="form-row grid-2">
-                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Nama Kategori *</label>
-                  <input
-                    required
-                    placeholder="Misal: Makan Siang"
-                    value={form.category}
-                    onChange={e => setForm({ ...form, category: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row grid-2">
-                <div className="form-group">
-                  <label>Nominal Limit (Rp) *</label>
-                  <input
-                    type="number"
-                    required
-                    min="1000"
-                    placeholder="Contoh: 1500000"
-                    value={form.limit}
-                    onChange={e => setForm({ ...form, limit: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Ambang Batas Peringatan (%)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={form.threshold}
-                    onChange={e => setForm({ ...form, threshold: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row grid-3">
-                <CustomSelect 
-                  label="Prioritas"
-                  value={form.priority}
-                  onChange={val => setForm({ ...form, priority: val })}
-                  options={[
-                    { value: 'Wajib', label: 'Wajib' },
-                    { value: 'Opsional', label: 'Opsional' }
-                  ]}
+              <div className="form-group">
+                <label>Nama Kategori *</label>
+                <input
+                  required
+                  placeholder="Misal: Makanan, Transportasi, Hiburan..."
+                  value={form.category}
+                  onChange={e => setForm({ ...form, category: e.target.value })}
+                  list="category-suggestions"
                 />
-                <CustomSelect 
-                  label="Siklus"
-                  value={form.cycle}
-                  onChange={val => setForm({ ...form, cycle: val })}
-                  options={[
-                    { value: 'Mingguan', label: 'Mingguan' },
-                    { value: 'Bulanan', label: 'Bulanan' },
-                    { value: 'Tahunan', label: 'Tahunan' }
-                  ]}
-                />
-                <div className="form-group form-group--center">
-                  <label>Rollover Sisa</label>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={form.rollover}
-                      onChange={e => setForm({ ...form, rollover: e.target.checked })}
-                    />
-                    <span className="toggle-track"><span className="toggle-thumb" /></span>
-                  </label>
-                </div>
+                <datalist id="category-suggestions">
+                  <option value="Makanan" />
+                  <option value="Transportasi" />
+                  <option value="Hiburan" />
+                  <option value="Belanja" />
+                  <option value="Kesehatan" />
+                  <option value="Tagihan" />
+                  <option value="Pendidikan" />
+                  <option value="Lainnya" />
+                </datalist>
               </div>
 
               <div className="form-group">
-                <label>Catatan / Tujuan</label>
+                <label>Batas Pengeluaran (Rp) *</label>
+                <input
+                  type="number"
+                  required
+                  min="1000"
+                  placeholder="Contoh: 1500000"
+                  value={form.limit}
+                  onChange={e => setForm({ ...form, limit: e.target.value })}
+                />
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '4px', display: 'block' }}>
+                  💡 Bisa juga set budget via WhatsApp: <strong>"budget makanan 1500000"</strong>
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label>Catatan (Opsional)</label>
                 <textarea
                   rows="2"
                   placeholder="Misal: Untuk makan siang kantor dan kopi pagi..."
@@ -487,7 +449,7 @@ export default function Budgets() {
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={closeModal}>Batal</button>
                 <button type="submit" className="btn-primary">
-                  <Save size={16} /> Simpan
+                  <Save size={16} /> Simpan Anggaran
                 </button>
               </div>
             </form>

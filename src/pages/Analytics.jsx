@@ -180,14 +180,11 @@ export default function Analytics() {
       <main className="dashboard-main">
         <header className="dashboard-topbar">
           <div className="dashboard-topbar__left">
-            <h1 className="dashboard-topbar__title">📈 Analitik Keuangan</h1>
+            <h1 className="dashboard-topbar__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <PieChartIcon size={26} className="text-brand" style={{ marginRight: '8px' }} />
+              Analitik Keuangan
+            </h1>
             <p className="dashboard-topbar__subtitle">Laporan kesehatan finansial dan proyeksi dompet Anda</p>
-          </div>
-          <div className="dashboard-topbar__right">
-            <button className="btn-primary" onClick={refreshData} disabled={isLoading}>
-              {isLoading ? <div className="spinner"></div> : <RefreshCw size={18} />}
-              <span>Sync Analitik</span>
-            </button>
           </div>
         </header>
 

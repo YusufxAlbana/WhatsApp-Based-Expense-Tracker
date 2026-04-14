@@ -186,33 +186,8 @@ export default function Dashboard() {
               {timeFilter}
               <ChevronDown size={14} />
             </button>
-            <button 
-              className={`btn-primary dashboard-topbar__add ${isSyncing ? 'btn--loading' : ''}`} 
-              id="dashboard-sync-btn"
-              onClick={handleRefreshSync}
-              disabled={isSyncing || !user}
-            >
-              {isSyncing ? (
-                <div className="spinner"></div>
-              ) : (
-                <>
-                  <RefreshCw size={18} />
-                  <span>Sync Data</span>
-                </>
-              )}
-            </button>
           </div>
         </header>
-
-        {syncStatus && (
-          <div className={`sync-toast sync-toast--${syncStatus} animate-fade-in`}>
-            {syncStatus === 'success' ? (
-              <><Zap size={16} /> Data berhasil disinkronkan dari Google Sheets!</>
-            ) : (
-              <>⚠️ Gagal sinkronisasi data.</>
-            )}
-          </div>
-        )}
 
         {/* Stat Cards */}
         <div className="stat-cards stagger-children">

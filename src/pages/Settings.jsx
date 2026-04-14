@@ -130,6 +130,14 @@ export default function Settings() {
     
     setTimeout(() => {
       localStorage.setItem('weberganize_prefs', JSON.stringify(prefForm))
+      
+      // Terapkan Tema Secara Global
+      if (prefForm.theme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        document.documentElement.removeAttribute('data-theme'); // Kembali ke dark (default)
+      }
+
       setIsSaving(false)
       setSaveStatus('success')
       setTimeout(() => setSaveStatus(null), 3000)
@@ -232,12 +240,17 @@ export default function Settings() {
                   <p>Perbarui informasi identitas dan kontak WhatsApp Anda.</p>
                 </div>
                 
-                <div className="profile-avatar-section">
-                   <div className="avatar-large">{profileForm.name?.[0]?.toUpperCase() || 'U'}</div>
-                   <div className="avatar-actions">
-                      <button className="btn-secondary btn-sm">Ubah Foto</button>
-                      <button className="btn-text btn-sm text-danger">Hapus</button>
-                   </div>
+                <div className="profile-avatar-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1rem', marginBottom: '2rem' }}>
+                   <svg 
+                      viewBox="0 0 32 32" 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      style={{ width: '80px', height: '80px', backgroundColor: '#dfe5e7', borderRadius: '50%', boxShadow: 'var(--shadow-sm)' }}
+                    >
+                      <path 
+                        d="M16 17C19.3137 17 22 14.3137 22 11C22 7.68629 19.3137 5 16 5C12.6863 5 10 7.68629 10 11C10 14.3137 12.6863 17 16 17ZM16 19.5C10.6667 19.5 0 22.1667 0 27.5V32H32V27.5C32 22.1667 21.3333 19.5 16 19.5Z" 
+                        fill="#ffffff"
+                      />
+                    </svg>
                 </div>
 
                 <form onSubmit={handleSaveProfile} className="settings-form mt-lg">
@@ -308,8 +321,7 @@ export default function Settings() {
                       onChange={val => setPrefForm({...prefForm, theme: val})}
                       options={[
                         { value: 'dark', label: 'Dark Mode (Default)' },
-                        { value: 'light', label: 'Light Mode', disabled: true },
-                        { value: 'system', label: 'Ikuti Sistem', disabled: true }
+                        { value: 'light', label: 'Light Mode' }
                       ]}
                     />
                   </div>

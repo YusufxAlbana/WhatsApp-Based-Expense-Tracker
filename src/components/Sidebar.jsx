@@ -57,7 +57,18 @@ export default function Sidebar({ isOpen, user, onLogout }) {
 
       <div className="sidebar__bottom">
         <button className="sidebar__user" onClick={() => navigate('/settings')} title="Pengaturan Profil">
-          <div className="sidebar__user-avatar">{user?.name?.[0]?.toUpperCase() || 'U'}</div>
+          <div className="sidebar__user-avatar" style={{ background: 'transparent' }}>
+             <svg 
+                viewBox="0 0 32 32" 
+                xmlns="http://www.w3.org/2000/svg" 
+                style={{ width: '100%', height: '100%', backgroundColor: '#dfe5e7', borderRadius: '50%' }}
+              >
+                <path 
+                  d="M16 17C19.3137 17 22 14.3137 22 11C22 7.68629 19.3137 5 16 5C12.6863 5 10 7.68629 10 11C10 14.3137 12.6863 17 16 17ZM16 19.5C10.6667 19.5 0 22.1667 0 27.5V32H32V27.5C32 22.1667 21.3333 19.5 16 19.5Z" 
+                  fill="#ffffff"
+                />
+              </svg>
+          </div>
           {isOpen && (
             <div className="sidebar__user-info">
               <span className="sidebar__user-name">{user?.name || 'User'}</span>

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage.jsx'
 import AuthPage from './pages/AuthPage.jsx'
@@ -10,6 +11,22 @@ import Information from './pages/Information.jsx'
 import Notifications from './pages/Notifications.jsx'
 
 function App() {
+  useEffect(() => {
+    const prefsStr = localStorage.getItem('weberganize_prefs')
+    if (prefsStr) {
+      try {
+        const prefs = JSON.parse(prefsStr)
+        if (prefs.theme === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light')
+        } else {
+          document.documentElement.removeAttribute('data-theme')
+        }
+      } catch (e) {
+        // Abaikan jika format error
+      }
+    }
+  }, [])
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />

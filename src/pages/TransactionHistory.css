@@ -71,7 +71,7 @@
   gap: var(--space-md);
   flex-wrap: wrap;
   position: relative;
-  z-index: 100;
+  z-index: 9999 !important; /* Sangat tinggi agar tidak tertutup tabel */
   overflow: visible !important;
 }
 

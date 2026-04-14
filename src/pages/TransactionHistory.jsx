@@ -38,15 +38,15 @@ const CustomDropdownMenu = ({ value, options, onChange, icon }) => {
 
       {isOpen && (
         <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setIsOpen(false)} />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 99998 }} onClick={() => setIsOpen(false)} />
           <ul 
             className="glass-card animate-slide-up"
             style={{ 
-              position: 'absolute', top: '100%', right: 0, marginTop: '8px', zIndex: 9999, 
-              minWidth: '200px', padding: '8px', display: 'flex', flexDirection: 'column', 
-              gap: '4px', listStyle: 'none', background: 'var(--bg-card)',
-              border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)',
-              maxHeight: '300px', overflowY: 'auto'
+              position: 'absolute', top: '100%', left: 0, marginTop: '8px', zIndex: 99999, 
+              minWidth: '220px', padding: '8px', display: 'flex', flexDirection: 'column', 
+              gap: '4px', listStyle: 'none', background: '#1a1b2e',
+              border: '1px solid var(--border-color)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+              maxHeight: '350px', overflowY: 'auto'
             }}
           >
             {options.map(opt => (

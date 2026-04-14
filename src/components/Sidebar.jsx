@@ -55,7 +55,7 @@ export default function Sidebar({ isOpen, user, onLogout }) {
       </nav>
 
       <div className="sidebar__bottom">
-        <div className="sidebar__user">
+        <button className="sidebar__user" onClick={() => navigate('/settings')} title="Pengaturan Profil">
           <div className="sidebar__user-avatar">{user?.name?.[0]?.toUpperCase() || 'U'}</div>
           {isOpen && (
             <div className="sidebar__user-info">
@@ -63,7 +63,7 @@ export default function Sidebar({ isOpen, user, onLogout }) {
               <span className="sidebar__user-plan">Plan: Gratis</span>
             </div>
           )}
-        </div>
+        </button>
         <button className="sidebar__item sidebar__logout" onClick={onLogout}>
           <LogOut size={20} />
           {isOpen && <span>Keluar</span>}

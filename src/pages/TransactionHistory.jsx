@@ -241,25 +241,11 @@ export default function TransactionHistory() {
         {/* Top Bar */}
         <header className="dashboard-topbar">
           <div className="dashboard-topbar__left">
-            <h1 className="dashboard-topbar__title">📜 Riwayat Transaksi</h1>
+            <h1 className="dashboard-topbar__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Receipt size={26} className="text-brand" style={{ marginRight: '8px' }} />
+              Riwayat Transaksi
+            </h1>
             <p className="dashboard-topbar__subtitle">Lihat, edit, dan kelola semua transaksi kamu</p>
-          </div>
-          <div className="dashboard-topbar__right">
-            <button
-              className={`btn-primary dashboard-topbar__add ${isSyncing ? 'btn--loading' : ''}`}
-              id="transaction-sync-btn"
-              onClick={handleRefreshSync}
-              disabled={isSyncing || !user}
-            >
-              {isSyncing ? (
-                <div className="spinner"></div>
-              ) : (
-                <>
-                  <RefreshCw size={18} />
-                  <span>Sync Data</span>
-                </>
-              )}
-            </button>
           </div>
         </header>
 

@@ -218,10 +218,6 @@ export default function Budgets() {
             <p className="dashboard-topbar__subtitle">Pantau batas pengeluaran per kategori secara real-time</p>
           </div>
           <div className="dashboard-topbar__right">
-            <button className="btn-secondary" onClick={fetchData} disabled={isLoading}>
-              <RefreshCw size={16} className={isLoading ? 'spin' : ''} />
-              <span>Sinkron Data</span>
-            </button>
             <button className="btn-primary" onClick={openAdd}>
               <Plus size={16} />
               <span>Budget Baru</span>

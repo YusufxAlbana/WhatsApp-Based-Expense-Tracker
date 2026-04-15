@@ -242,67 +242,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ========== PRICING ========== */}
-      <section className="pricing" id="pricing">
-        <div className="container">
-          <div className="section-header">
-            <span className="section-label badge">
-              <Zap size={14} /> Harga
-            </span>
-            <h2 className="section-title">
-              Gratis. <span className="gradient-text">Selamanya.</span>
-            </h2>
-            <p className="section-subtitle">
-              Semua fitur utama bisa kamu pakai tanpa bayar. Upgrade kapan saja untuk fitur premium.
-            </p>
-          </div>
-
-          <div className="pricing__cards">
-            <div className="pricing__card glass-card">
-              <div className="pricing__card-header">
-                <h3>Gratis</h3>
-                <div className="pricing__price">
-                  <span className="pricing__amount">Rp0</span>
-                  <span className="pricing__period">/bulan</span>
-                </div>
-              </div>
-              <ul className="pricing__features">
-                <PricingFeature text="100 transaksi/bulan" />
-                <PricingFeature text="Dashboard visual" />
-                <PricingFeature text="AI auto-kategorisasi" />
-                <PricingFeature text="Laporan mingguan WA" />
-                <PricingFeature text="1 akun WhatsApp" />
-              </ul>
-              <Link to="/auth?mode=register" className="btn-secondary pricing__btn" id="pricing-free-btn">
-                Mulai Sekarang
-              </Link>
-            </div>
-
-            <div className="pricing__card pricing__card--featured glass-card">
-              <div className="pricing__popular-badge">Paling Populer</div>
-              <div className="pricing__card-header">
-                <h3>Pro</h3>
-                <div className="pricing__price">
-                  <span className="pricing__amount">Rp29K</span>
-                  <span className="pricing__period">/bulan</span>
-                </div>
-              </div>
-              <ul className="pricing__features">
-                <PricingFeature text="Transaksi unlimited" />
-                <PricingFeature text="Semua fitur Gratis" />
-                <PricingFeature text="Smart budgeting AI" />
-                <PricingFeature text="Export data CSV/PDF" />
-                <PricingFeature text="Multi-currency support" />
-                <PricingFeature text="Prioritas support" />
-              </ul>
-              <Link to="/auth?mode=register" className="btn-primary pricing__btn" id="pricing-pro-btn">
-                Upgrade ke Pro
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ========== CTA ========== */}
       <section className="cta-section">
         <div className="container">
@@ -335,7 +274,6 @@ export default function LandingPage() {
               <div className="footer__col">
                 <h4>Produk</h4>
                 <a href="#features">Fitur</a>
-                <a href="#pricing">Harga</a>
                 <a href="#how-it-works">Cara Kerja</a>
               </div>
               <div className="footer__col">
@@ -377,11 +315,3 @@ function StepCard({ num, icon, title, desc, color }) {
   )
 }
 
-function PricingFeature({ text }) {
-  return (
-    <li className="pricing__feature">
-      <Check size={16} className="pricing__check" />
-      <span>{text}</span>
-    </li>
-  )
-}

@@ -1,16 +1,46 @@
-# React + Vite
+# LedgerLink - WhatsApp-Based Expense Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplikasi pelacak pengeluaran pintar yang menggunakan WhatsApp untuk mencatat transaksi dan AI untuk menganalisis data keuangan Anda.
 
-Currently, two official plugins are available:
+## Fitur Utama
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Chat-Based Input**: Catat pengeluaran langsung melalui WhatsApp
+- **AI Parsing**: AI otomatis mengekstrak item, jumlah, dan kategori
+- **Dashboard Visual**: Grafik dan analisis keuangan real-time
+- **Smart Budgeting**: Atur target anggaran dan dapatkan peringatan otomatis
+- **Aman & Private**: Data tersimpan dengan aman di Google Sheets Anda
+- **Multi-Currency**: Support berbagai mata uang
 
-## React Compiler
+## Cara Kerja
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Chat di WhatsApp** - Kirim pesan ke bot LedgerLink
+2. **AI Proses & Catat** - AI mengekstrak data dan menyimpannya
+3. **Lihat Dashboard** - Analisis grafik dan tips keuangan
 
-## Expanding the ESLint configuration
+## Status: **FULL GRATIS** 
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+LedgerLink adalah aplikasi **100% gratis** tanpa biaya langganan atau pembayaran tersembunyi. Semua fitur dapat digunakan tanpa batas.
+
+## Instalasi
+
+1. Clone repository ini
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Jalankan development server:
+   ```bash
+   npm run dev
+   ```
+
+## Teknologi
+
+- **Frontend**: React + Vite
+- **Backend**: WhatsApp Web.js + Node.js
+- **AI**: Groq AI untuk parsing pesan
+- **Database**: Supabase
+- **Storage**: Google Sheets Integration
+
+## Lisensi
+
+© 2026 LedgerLink. All rights reserved.

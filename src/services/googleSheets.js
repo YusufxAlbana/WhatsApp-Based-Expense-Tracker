@@ -22,21 +22,21 @@ export const sendToGoogleSheets = async (data) => {
     // However, the user provided a standard fetch template.
     
     const response = await fetch(GOOGLE_SHEETS_URL, {
-      method: "POST",
-      mode: "no-cors", 
+      method: 'POST',
+      mode: 'no-cors',
       headers: {
-        "Content-Type": "text/plain"
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(data),
     });
 
-    // With no-cors, the response is 'opaque'. 
-    // We can't see the status, but if it doesn't throw, it likely reached the script.
+    // With no-cors, the response is opaque, so browser cannot inspect status details.
+    // We still treat no network error as likely success because Apps Script will receive the payload.
     if (response.type === 'opaque' || response.ok) {
-      console.log("Data dikirim (Opaque/OK). Cek Google Sheets kamu!");
+      console.log('Data dikirim (Opaque/OK). Cek Google Sheets kamu!');
       return true;
     } else {
-      console.error("Gagal mengirim data. Status:", response.status);
+      console.error('Gagal mengirim data. Status:', response.status);
       return false;
     }
   } catch (error) {
@@ -99,6 +99,107 @@ export const getExpensesFromSheets = (userId) => {
 
     document.head.appendChild(script)
   })
+}
+
+export const getBudgetsFromSheets = (userId) => {
+  return new Promise((resolve) => {
+    const callbackName = `gsBudgetCallback_${Date.now()}`
+    const url = `${import.meta.env.VITE_GOOGLE_SHEETS_URL}?userId=${encodeURIComponent(userId)}&action=getBudgets&callback=${callbackName}`
+
+    window[callbackName] = (data) => {
+      try {
+        const result = Array.isArray(data)
+          ? data.map(item => ({
+              ...item,
+              limit: Number(item.limit || 0),
+              amount: Number(item.amount || 0)
+            }))
+          : []
+        resolve(result)
+      } catch {
+        resolve([])
+      } finally {
+        delete window[callbackName]
+        if (script.parentNode) script.parentNode.removeChild(script)
+      }
+    }
+
+    const script = document.createElement('script')
+    script.src = url
+    script.onerror = () => {
+      console.error('Gagal mengambil data anggaran dari Sheets (CORS/network error)')
+      delete window[callbackName]
+      if (script.parentNode) script.parentNode.removeChild(script)
+      resolve([])
+    }
+
+    const timeout = setTimeout(() => {
+      console.warn('Google Sheets budget request timeout')
+      delete window[callbackName]
+      if (script.parentNode) script.parentNode.removeChild(script)
+      resolve([])
+    }, 10000)
+
+    const originalCallback = window[callbackName]
+    window[callbackName] = (data) => {
+      clearTimeout(timeout)
+      originalCallback(data)
+    }
+
+    document.head.appendChild(script)
+  })
+}
+
+export const saveBudgetToSheets = async (budget) => {
+  try {
+    const response = await fetch(GOOGLE_SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: budget.budgetId ? 'updateBudget' : 'insertBudget',
+        ...budget,
+        limit: Number(budget.limit || 0)
+      })
+    })
+
+    if (response.type === 'opaque' || response.ok) {
+      console.log('Budget berhasil disimpan/diupdate di Google Sheets!')
+      return true
+    }
+    return false
+  } catch (error) {
+    console.error('Gagal mengirim data anggaran ke Sheets:', error)
+    throw error
+  }
+}
+
+export const deleteBudgetInSheets = async ({ userId, budgetId }) => {
+  try {
+    const response = await fetch(GOOGLE_SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'deleteBudget',
+        userId,
+        budgetId
+      })
+    })
+
+    if (response.type === 'opaque' || response.ok) {
+      console.log('Budget berhasil dihapus di Google Sheets!')
+      return true
+    }
+    return false
+  } catch (error) {
+    console.error('Gagal menghapus anggaran di Sheets:', error)
+    throw error
+  }
 }
 
 /**

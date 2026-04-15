@@ -26,4 +26,43 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    files: ['wa-server/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.node,
+        ...globals.commonjs,
+      },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'script',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+  {
+    files: ['google-apps-script.js', '**/*.gs'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.browser,
+        SpreadsheetApp: 'readonly',
+        ContentService: 'readonly',
+        UrlFetchApp: 'readonly',
+        PropertiesService: 'readonly',
+        ScriptApp: 'readonly',
+      },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'script',
+      },
+    },
+    rules: {
+      'no-undef': 'off',
+      'no-unused-vars': ['error', { varsIgnorePattern: '^(doGet|doPost|[A-Z_])' }],
+    },
+  },
 ])

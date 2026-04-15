@@ -7,7 +7,12 @@ import {
   ChevronDown, Check
 } from 'lucide-react'
 import { formatRupiah, formatShortRupiah } from '../data/mockData.js'
-import { getExpensesFromSheets } from '../services/googleSheets.js'
+import {
+  getExpensesFromSheets,
+  getBudgetsFromSheets,
+  saveBudgetToSheets,
+  deleteBudgetInSheets
+} from '../services/googleSheets.js'
 import Sidebar from '../components/Sidebar'
 import './Dashboard.css'
 import './Budgets.css'
@@ -94,7 +99,13 @@ export default function Budgets() {
   const [budgets, setBudgets] = useState(() => {
     try {
       const saved = localStorage.getItem('weberganize_budgets')
-      return saved ? JSON.parse(saved) : []
+      const parsed = saved ? JSON.parse(saved) : []
+      return parsed.map((b) => ({
+        ...b,
+        budgetId: b.budgetId || b.id || `budget-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+        id: b.budgetId || b.id || `budget-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+        limit: Number(b.limit || 0)
+      }))
     } catch {
       return []
     }
@@ -107,6 +118,8 @@ export default function Budgets() {
     category: '', limit: '', color: '#25D366', notes: ''
   }
   const [form, setForm] = useState(EMPTY_FORM)
+  const [isBudgetLoading, setIsBudgetLoading] = useState(false)
+  const [budgetSyncStatus, setBudgetSyncStatus] = useState(null)
 
   // ── Auth guard
   useEffect(() => {
@@ -114,6 +127,32 @@ export default function Budgets() {
     if (!saved) { navigate('/auth'); return }
     setUser(JSON.parse(saved))
   }, [navigate])
+
+  const fetchBudgets = async (isBackground = false) => {
+    if (!user?.id) return
+    if (!isBackground) setIsBudgetLoading(true)
+
+    try {
+      const data = await getBudgetsFromSheets(user.id)
+      if (data && data.length > 0) {
+        const normalized = data.map((budget) => ({
+          ...budget,
+          id: budget.budgetId || budget.id,
+          budgetId: budget.budgetId || budget.id,
+          limit: Number(budget.limit || 0)
+        }))
+        setBudgets(normalized)
+        localStorage.setItem('weberganize_budgets', JSON.stringify(normalized))
+      } else {
+        setBudgets([])
+        localStorage.setItem('weberganize_budgets', JSON.stringify([]))
+      }
+    } catch (error) {
+      console.error('Budget sync failed', error)
+    } finally {
+      setIsBudgetLoading(false)
+    }
+  }
 
   // ── Fetch real data
   const fetchData = async (isBackground = false) => {
@@ -135,7 +174,12 @@ export default function Budgets() {
       setIsLoading(false)
     }
   }
-  useEffect(() => { if (user) fetchData(true) }, [user])
+  useEffect(() => {
+    if (user) {
+      fetchData(true)
+      fetchBudgets(true)
+    }
+  }, [user])
 
   // ── Persist budgets
   useEffect(() => {
@@ -183,19 +227,39 @@ export default function Budgets() {
   }
   const closeModal = () => setIsModalOpen(false)
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    if (editingBudget) {
-      setBudgets(prev => prev.map(b => b.id === editingBudget.id ? { ...form, id: b.id } : b))
-    } else {
-      setBudgets(prev => [...prev, { ...form, id: Date.now() }])
+
+    const budgetId = editingBudget?.budgetId || editingBudget?.id || `budget-${Date.now()}-${Math.random().toString(36).slice(2,8)}`
+    const payload = {
+      userId: user.id,
+      budgetId,
+      category: form.category,
+      limit: Number(form.limit || 0),
+      color: form.color,
+      notes: form.notes || ''
     }
-    closeModal()
+
+    try {
+      await saveBudgetToSheets(payload)
+      await fetchBudgets(false)
+    } catch (error) {
+      console.error('Gagal menyimpan anggaran:', error)
+      alert('Gagal menyimpan anggaran. Coba lagi.')
+    } finally {
+      closeModal()
+    }
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!window.confirm('Hapus anggaran ini?')) return
-    setBudgets(prev => prev.filter(b => b.id !== id))
+    try {
+      await deleteBudgetInSheets({ userId: user.id, budgetId: id })
+      await fetchBudgets(false)
+    } catch (error) {
+      console.error('Gagal menghapus anggaran:', error)
+      alert('Gagal menghapus anggaran. Coba lagi.')
+    }
   }
 
   // ──────────────────────────────────────────────

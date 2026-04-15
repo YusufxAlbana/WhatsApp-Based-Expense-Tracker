@@ -1,0 +1,5 @@
+2026/04/15-13:49:44.520 17ac Creating DB D:\project\WhatsApp-Based Expense Tracker\wa-server\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb since it was missing.
+2026/04/15-13:49:44.717 17ac Reusing MANIFEST D:\project\WhatsApp-Based Expense Tracker\wa-server\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/15-20:18:00.497 cb4 Level-0 table #5: started
+2026/04/15-20:18:00.634 cb4 Level-0 table #5: 1280611 bytes OK
+2026/04/15-20:18:00.657 cb4 Delete type=0 #3

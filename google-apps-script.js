@@ -12,35 +12,37 @@
  */
 
 const INDEX_SHEET = 'INDEX';
+const INDEX_HEADERS = ['DAFTAR USER', 'LINK NAVIGASI', 'TERAKHIR AKTIF', 'PASSWORD', 'NAMA', 'PHONE', 'WELCOME_SENT'];
+const BUDGETS_SHEET = 'BUDGETS';
+const BUDGETS_HEADERS = ['userId', 'budgetId', 'category', 'limit', 'color', 'notes', 'createdAt', 'updatedAt'];
 
-// Fungsi bantuan untuk memastikan tab user dan index ada
-function ensureUserRegistered(userId, password = '', name = '') {
+function ensureUserRegistered(userId, password = '', name = '', phone = '') {
   if (!userId) return null;
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // 1. Cek atau Buat Sheet INDEX
+
   let indexSheet = ss.getSheetByName(INDEX_SHEET);
   if (!indexSheet) {
     indexSheet = ss.insertSheet(INDEX_SHEET);
-    indexSheet.appendRow(['DAFTAR USER', 'LINK NAVIGASI', 'TERAKHIR AKTIF', 'PASSWORD', 'NAMA']);
-    indexSheet.getRange('A1:E1').setFontWeight('bold').setBackground('#4285f4').setFontColor('white');
+    indexSheet.appendRow(INDEX_HEADERS);
+    indexSheet.getRange(1, 1, 1, INDEX_HEADERS.length).setFontWeight('bold').setBackground('#4285f4').setFontColor('white');
   } else {
-    if (indexSheet.getRange('D1').getValue() !== 'PASSWORD') {
-      indexSheet.getRange('D1').setValue('PASSWORD').setFontWeight('bold').setBackground('#4285f4').setFontColor('white');
-      indexSheet.getRange('E1').setValue('NAMA').setFontWeight('bold').setBackground('#4285f4').setFontColor('white');
-    }
+    const headerRow = indexSheet.getRange(1, 1, 1, INDEX_HEADERS.length).getValues()[0];
+    INDEX_HEADERS.forEach((header, index) => {
+      if (headerRow[index] !== header) {
+        indexSheet.getRange(1, index + 1).setValue(header).setFontWeight('bold').setBackground('#4285f4').setFontColor('white');
+      }
+    });
   }
-  
+
   const indexData = indexSheet.getDataRange().getValues();
   let userRowIndex = -1;
   for (let i = 1; i < indexData.length; i++) {
-    if (String(indexData[i][0]) === String(userId)) {
-      userRowIndex = i + 1; // +1 karena getValues() index mulai 0, sheet row mulai 1
+    if (String(indexData[i][0]).toLowerCase() === String(userId).toLowerCase()) {
+      userRowIndex = i + 1;
       break;
     }
   }
 
-  // 2. Cek atau Buat Sheet Khusus Akun Tersebut
   let userSheet = ss.getSheetByName(userId);
   let isNewUser = false;
   if (!userSheet) {
@@ -50,19 +52,40 @@ function ensureUserRegistered(userId, password = '', name = '') {
     isNewUser = true;
   }
 
-  // 3. Update INDEX: Daftarkan user atau update waktu aktifnya
   const timestamp = new Date().toLocaleString('id-ID');
   if (userRowIndex === -1) {
-    // User benar-benar baru di INDEX, kita generate clickable HYPERLINK
     const sheetId = userSheet.getSheetId();
     const linkFormula = `=HYPERLINK("#gid=${sheetId}", "KLIK: Buka Tab")`;
-    indexSheet.appendRow([userId, linkFormula, timestamp, password, name]);
+    indexSheet.appendRow([userId, linkFormula, timestamp, password, name, phone, false]);
   } else {
-    // User lama, perbarui jam Terakhir Aktif
     indexSheet.getRange(userRowIndex, 3).setValue(timestamp);
+    if (phone) {
+      const phoneCol = INDEX_HEADERS.indexOf('PHONE') + 1;
+      if (phoneCol > 0) {
+        indexSheet.getRange(userRowIndex, phoneCol).setValue(phone);
+      }
+    }
   }
 
   return { userSheet, isNewUser };
+}
+
+function ensureBudgetsSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(BUDGETS_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(BUDGETS_SHEET);
+    sheet.appendRow(BUDGETS_HEADERS);
+    sheet.getRange(1, 1, 1, BUDGETS_HEADERS.length).setFontWeight('bold').setBackground('#fbbc05').setFontColor('black');
+  } else {
+    const headerRow = sheet.getRange(1, 1, 1, BUDGETS_HEADERS.length).getValues()[0];
+    BUDGETS_HEADERS.forEach((header, index) => {
+      if (headerRow[index] !== header) {
+        sheet.getRange(1, index + 1).setValue(header).setFontWeight('bold').setBackground('#fbbc05').setFontColor('black');
+      }
+    });
+  }
+  return sheet;
 }
 
 function doGet(e) {
@@ -75,7 +98,6 @@ function doGet(e) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // ── ACTION: LOGIN ──
     if (action === 'login') {
       const password = params.password || '';
       if (!userId || !password) {
@@ -87,13 +109,13 @@ function doGet(e) {
         } else {
           const indexData = indexSheet.getDataRange().getValues();
           let foundUser = null;
-          // INDEX columns: DAFTAR USER | LINK NAVIGASI | TERAKHIR AKTIF | PASSWORD | NAMA
           for (let i = 1; i < indexData.length; i++) {
             if (String(indexData[i][0]).toLowerCase() === String(userId).toLowerCase()) {
               foundUser = {
                 id: indexData[i][0],
-                password: indexData[i][3], // Kolom D
-                name: indexData[i][4] || indexData[i][0].split('@')[0] // Kolom E
+                password: indexData[i][3],
+                name: indexData[i][4] || indexData[i][0].split('@')[0],
+                phone: indexData[i][5] || ''
               };
               break;
             }
@@ -104,23 +126,56 @@ function doGet(e) {
           } else if (String(foundUser.password) !== String(password)) {
             result = { success: false, error: 'Password yang dimasukkan salah.' };
           } else {
-            result = { success: true, user: { id: foundUser.id, name: foundUser.name, email: foundUser.id } };
+            result = { success: true, user: { id: foundUser.id, name: foundUser.name, email: foundUser.id, phone: foundUser.phone } };
           }
         }
       }
-    } 
-    // ── DEFAULT: AMBIL DATA TRANSAKSI ──
-    else {
+    } else if (action === 'lookupPhone') {
+      const phone = params.phone || '';
+      if (!phone) {
+        result = { found: false, error: 'Phone parameter is required' };
+      } else {
+        const indexSheet = ss.getSheetByName(INDEX_SHEET);
+        result = { found: false };
+        if (indexSheet) {
+          const indexData = indexSheet.getDataRange().getValues();
+          for (let i = 1; i < indexData.length; i++) {
+            if (String(indexData[i][5]).replace(/\D/g, '') === String(phone).replace(/\D/g, '')) {
+              result = {
+                found: true,
+                userId: indexData[i][0],
+                name: indexData[i][4] || indexData[i][0].split('@')[0],
+                welcomeSent: String(indexData[i][6]).toLowerCase() === 'true'
+              };
+              break;
+            }
+          }
+        }
+      }
+    } else if (action === 'getBudgets') {
+      const budgetsSheet = ensureBudgetsSheet();
+      const budgetData = budgetsSheet.getDataRange().getValues();
+      if (budgetData.length > 1) {
+        result = budgetData.slice(1).map((row, index) => {
+          const obj = { rowIndex: index + 2 };
+          BUDGETS_HEADERS.forEach((header, i) => {
+            obj[header] = row[i];
+          });
+          return obj;
+        }).filter(row => String(row.userId).toLowerCase() === String(userId).toLowerCase());
+      } else {
+        result = [];
+      }
+    } else {
       if (userId) {
         const userSheet = ss.getSheetByName(userId);
         if (userSheet) {
           const data = userSheet.getDataRange().getValues();
-          const headers = data[0]; 
+          const headers = data[0];
           let rows = [];
-          
           if (data.length > 1) {
             rows = data.slice(1).map((row, index) => {
-              const obj = { rowIndex: index + 2 }; 
+              const obj = { rowIndex: index + 2 };
               headers.forEach((header, i) => {
                 obj[header] = row[i];
               });
@@ -129,7 +184,6 @@ function doGet(e) {
           }
           result = rows;
         } else {
-          // Tab user tidak ditemukan
           result = [];
         }
       } else {
@@ -154,32 +208,97 @@ function doPost(e) {
     const action = payload.action || 'insert';
     const password = payload.password || '';
     const name = payload.name || '';
+    const phone = payload.phone || '';
 
     if (!userId) {
       return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Silakan sediakan userId' })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Pastikan user ada di INDEX dan punya Tab sendiri
-    const { userSheet } = ensureUserRegistered(userId, password, name);
-    
-    // ── REGISTER (Hanya mencatat bahwa akun terdaftar) ──
-    if (action === 'register') {
-      // Kita HAPUS perintah appendRow agar tab-nya TETAP KOSONG saat user baru daftar.
-      // Dengan begitu, sistem tidak akan membaca pesan "Akun Berhasil Terdaftar" sebagai pengeluaran/transaksi.
-      
-      // Kirim Email Selamat Datang OTOMATIS!
-      try {
-        const subject = "🎉 Selamat Bergabung di LedgerLink!";
-        const body = `Halo ${name || 'Pengguna'},\n\nTerima kasih telah bergabung! Akun LedgerLink Anda dengan email (${userId}) telah berhasil diaktivasi dan dihubungkan secara super-aman dengan Spreadsheet.\n\nMulai hari ini, mari kita catat semua pengeluaran Anda dengan rapi.\n\nSalam pintar,\nTim LedgerLink`;
-        MailApp.sendEmail(userId, subject, body);
-      } catch (e) {
-        // Abaikan jika email invalid atau MailApp dibatasi
-      }
+    const { userSheet } = ensureUserRegistered(userId, password, name, phone);
 
+    if (action === 'register') {
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ── INSERT (Data dari Bot/Web) ──
+    if (action === 'markWelcomeSent') {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const indexSheet = ss.getSheetByName(INDEX_SHEET);
+      if (indexSheet) {
+        const indexData = indexSheet.getDataRange().getValues();
+        for (let i = 1; i < indexData.length; i++) {
+          if (String(indexData[i][0]).toLowerCase() === String(userId).toLowerCase()) {
+            const welcomeCol = INDEX_HEADERS.indexOf('WELCOME_SENT') + 1;
+            if (welcomeCol > 0) {
+              indexSheet.getRange(i + 1, welcomeCol).setValue(true);
+              return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
+            }
+          }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'User not found' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'insertBudget') {
+      const budgetsSheet = ensureBudgetsSheet();
+      const budgetId = payload.budgetId || `budget-${new Date().getTime()}`;
+      budgetsSheet.appendRow([
+        userId,
+        budgetId,
+        payload.category || '',
+        payload.limit || 0,
+        payload.color || '#25D366',
+        payload.notes || '',
+        new Date().toISOString(),
+        new Date().toISOString()
+      ]);
+      return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'updateBudget') {
+      const budgetsSheet = ensureBudgetsSheet();
+      const budgetData = budgetsSheet.getDataRange().getValues();
+      let updated = false;
+      for (let i = 1; i < budgetData.length; i++) {
+        if (String(budgetData[i][0]).toLowerCase() === String(userId).toLowerCase() && String(budgetData[i][1]) === String(payload.budgetId)) {
+          const headers = BUDGETS_HEADERS;
+          const rowIndex = i + 1;
+          if (payload.category !== undefined) {
+            const col = headers.indexOf('category') + 1;
+            budgetsSheet.getRange(rowIndex, col).setValue(payload.category);
+          }
+          if (payload.limit !== undefined) {
+            const col = headers.indexOf('limit') + 1;
+            budgetsSheet.getRange(rowIndex, col).setValue(payload.limit);
+          }
+          if (payload.color !== undefined) {
+            const col = headers.indexOf('color') + 1;
+            budgetsSheet.getRange(rowIndex, col).setValue(payload.color);
+          }
+          if (payload.notes !== undefined) {
+            const col = headers.indexOf('notes') + 1;
+            budgetsSheet.getRange(rowIndex, col).setValue(payload.notes);
+          }
+          const updatedCol = headers.indexOf('updatedAt') + 1;
+          budgetsSheet.getRange(rowIndex, updatedCol).setValue(new Date().toISOString());
+          updated = true;
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: updated })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === 'deleteBudget') {
+      const budgetsSheet = ensureBudgetsSheet();
+      const budgetData = budgetsSheet.getDataRange().getValues();
+      for (let i = 1; i < budgetData.length; i++) {
+        if (String(budgetData[i][0]).toLowerCase() === String(userId).toLowerCase() && String(budgetData[i][1]) === String(payload.budgetId)) {
+          budgetsSheet.deleteRow(i + 1);
+          return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Budget not found' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     if (action === 'insert') {
       userSheet.appendRow([
         userId,
@@ -189,27 +308,13 @@ function doPost(e) {
         payload.tanggal || new Date().toISOString().split('T')[0],
         new Date().toISOString()
       ]);
-
-      // Kirim Email Peringatan Jika Nominal Sangat Besar (>= 1.000.000)
-      try {
-        if (Number(payload.amount) >= 1000000) {
-          const subject = "⚠️ Peringatan Pengeluaran Besar - LedgerLink";
-          const body = `Peringatan Otomatis!\n\nKami mendeteksi sebuah pencatatan pengeluaran yang tergolong cukup besar di akun Anda:\n\nItem: ${payload.item}\nJumlah: Rp ${Number(payload.amount).toLocaleString('id-ID')}\nKategori: ${payload.category}\n\nPerhatikan selalu budget bulanan Anda agar keuangan tetap stabil ya!\n\n- LedgerLink System`;
-          MailApp.sendEmail(userId, subject, body);
-        }
-      } catch (e) {
-        // Abaikan jika gagal
-      }
-
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ── UPDATE ──
     if (action === 'update') {
       const rowIndex = payload.rowIndex;
-      if (!rowIndex) throw new Error("Row index required");
+      if (!rowIndex) throw new Error('Row index required');
       const headers = userSheet.getRange(1, 1, 1, userSheet.getLastColumn()).getValues()[0];
-      
       if (payload.item !== undefined) {
         const col = headers.indexOf('item') + 1;
         if (col > 0) userSheet.getRange(rowIndex, col).setValue(payload.item);
@@ -225,7 +330,6 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ── DELETE ──
     if (action === 'delete') {
       const rowIndex = payload.rowIndex;
       userSheet.deleteRow(rowIndex);
@@ -233,7 +337,6 @@ function doPost(e) {
     }
 
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' })).setMimeType(ContentService.MimeType.JSON);
-
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message })).setMimeType(ContentService.MimeType.JSON);
   }

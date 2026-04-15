@@ -15,7 +15,8 @@ export default function AuthPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    phone: ''
   })
 
   const handleChange = (e) => {
@@ -41,7 +42,8 @@ export default function AuthPage() {
           action: 'register',
           userId: user.id,
           password: formData.password,
-          name: formData.name
+          name: formData.name,
+          phone: formData.phone
         })
         user.password = formData.password
         localStorage.setItem('weberganize_user', JSON.stringify(user))
@@ -151,6 +153,26 @@ export default function AuthPage() {
                 />
               </div>
             </div>
+
+            {mode === 'register' && (
+              <div className="auth-field">
+                <label htmlFor="auth-phone">Nomor WhatsApp</label>
+                <div className="auth-input-wrapper">
+                  <Phone size={18} className="auth-input-icon" />
+                  <input
+                    type="tel"
+                    id="auth-phone"
+                    placeholder="6285xxxxxxxx"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <small className="auth-help">
+                  Masukkan nomor WhatsApp tanpa +62, contoh: 6285xxxxxxxx.
+                </small>
+              </div>
+            )}
 
             <div className="auth-field">
               <label htmlFor="auth-password">

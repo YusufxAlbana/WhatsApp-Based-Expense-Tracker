@@ -27,6 +27,8 @@ export default function Navbar({ variant = 'landing' }) {
             <div className={`navbar__links ${menuOpen ? 'navbar__links--open' : ''}`}>
               <a href="#features" className="navbar__link" onClick={() => setMenuOpen(false)}>Fitur</a>
               <a href="#how-it-works" className="navbar__link" onClick={() => setMenuOpen(false)}>Cara Kerja</a>
+              <a href="#examples" className="navbar__link" onClick={() => setMenuOpen(false)}>Contoh</a>
+              <a href="#faq" className="navbar__link" onClick={() => setMenuOpen(false)}>FAQ</a>
             </div>
 
             <div className="navbar__actions">

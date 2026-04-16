@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  wa-bot:
+    build: 
+      context: ./wa-server
+    container_name: ledgerlink-wa-bot
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount the WhatsApp session folder so we don't need to re-scan QR code if container restarts
+      - ./wa-server/session:/app/session
+      - ./wa-server/.wwebjs_auth:/app/.wwebjs_auth
+    env_file:
+      - .env

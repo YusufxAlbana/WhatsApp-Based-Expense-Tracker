@@ -5,6 +5,61 @@ import { sendToGoogleSheets, loginUserViaSheets } from '../services/googleSheets
 import logo from '../assets/logo.svg'
 import './AuthPage.css'
 
+// Function to normalize phone number to Indonesian format
+const normalizePhoneNumber = (phone) => {
+  if (!phone) return null;
+  
+  // Remove semua spasi, dash, dan karakter khusus
+  let normalized = phone.replace(/[\s\-\(\)\.]/g, '');
+  
+  // Jika mulai dengan +, hapus
+  if (normalized.startsWith('+')) {
+    normalized = normalized.substring(1);
+  }
+  
+  // Jika mulai dengan 0 (format Indonesia), ubah ke 62
+  if (normalized.startsWith('0')) {
+    normalized = '62' + normalized.substring(1);
+  }
+  
+  // Jika tidak mulai dengan 62, anggap nomor lokal Indonesia
+  if (!normalized.startsWith('62')) {
+    normalized = '62' + normalized;
+  }
+  
+  // Validasi panjang (Indonesia biasanya 62 + 9-11 digit)
+  if (!/^62\d{9,11}$/.test(normalized)) {
+    return null; // Invalid format
+  }
+  
+  return normalized;
+}
+
+// Function to send welcome message via WhatsApp
+const sendWelcomeViaWhatsApp = async (phone) => {
+  try {
+    const waServerUrl = import.meta.env.VITE_WA_SERVER_URL || 'http://localhost:5000';
+    const response = await fetch(`${waServerUrl}/send-welcome`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ phone })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || 'Gagal mengirim pesan' };
+    }
+
+    const data = await response.json();
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending welcome message:', error);
+    return { success: false, error: 'Gagal menghubungi WhatsApp server. Silakan periksa koneksi.' };
+  }
+}
+
 export default function AuthPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -38,15 +93,45 @@ export default function AuthPage() {
 
     if (mode === 'register') {
       try {
+        // Normalize and validate phone number
+        const normalizedPhone = normalizePhoneNumber(formData.phone)
+        if (!normalizedPhone) {
+          setLoading(false)
+          alert('Nomor WhatsApp tidak valid. Silakan masukkan nomor yang benar.\n\nFormat yang diterima:\n• +62 857-2714-9998\n• +6285727149998\n• 085727149998\n• 62 857-2714-9998')
+          return
+        }
+
         await sendToGoogleSheets({
           action: 'register',
           userId: user.id,
           password: formData.password,
           name: formData.name,
-          phone: formData.phone
+          phone: normalizedPhone
         })
+        
+        // Try to send welcome message via WhatsApp
+        const waResult = await sendWelcomeViaWhatsApp(normalizedPhone)
+        if (!waResult.success) {
+          setLoading(false)
+          const errorMsg = waResult.error || 'Unknown error';
+          
+          // Check if it's a server not ready error
+          if (errorMsg.includes('not ready') || errorMsg.includes('WhatsApp')) {
+            alert(`Bot WhatsApp belum siap.\n\n${errorMsg}\n\nPastikan:\n1. wa-server sudah running (npm start di folder wa-server)\n2. Coba daftar ulang dalam 30 detik`);
+          } else if (errorMsg.includes('Invalid phone') || errorMsg.includes('format')) {
+            alert(`Nomor WhatsApp tidak valid.\n\n${errorMsg}\n\nFormat yang diterima:\n• +62 857-2714-9998\n• 085727149998\n• 62 857-2714-9998`);
+          } else {
+            alert(`Pendaftaran berhasil, tapi gagal mengirim pesan WhatsApp: ${errorMsg}\n\nSilakan coba daftar ulang.`);
+          }
+          return
+        }
+        
         user.password = formData.password
         localStorage.setItem('weberganize_user', JSON.stringify(user))
+        
+        // Initialize default data untuk new user (prevent broken UI during load)
+        localStorage.setItem('weberganize_expenses', JSON.stringify([]))
+        localStorage.setItem('weberganize_budgets', JSON.stringify([]))
         
         setTimeout(() => {
           setLoading(false)

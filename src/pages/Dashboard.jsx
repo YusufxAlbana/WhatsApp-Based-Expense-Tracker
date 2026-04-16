@@ -65,7 +65,10 @@ export default function Dashboard() {
       return []
     }
   })
-  const [isLoading, setIsLoading] = useState(() => !localStorage.getItem('weberganize_expenses'))
+  const [isLoading, setIsLoading] = useState(() => {
+    // Jangan set loading = true untuk new user, cukup false supaya UI langsung rapi
+    return false
+  })
 
   useEffect(() => {
     const savedUser = localStorage.getItem('weberganize_user')

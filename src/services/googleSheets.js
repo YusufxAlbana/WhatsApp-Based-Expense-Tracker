@@ -152,6 +152,9 @@ export const getBudgetsFromSheets = (userId) => {
 
 export const saveBudgetToSheets = async (budget) => {
   try {
+    // Jika budgetId ada, ini UPDATE. Jika tidak ada, ini INSERT (backend akan generate)
+    const action = budget.budgetId ? 'updateBudget' : 'insertBudget'
+    
     const response = await fetch(GOOGLE_SHEETS_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -159,7 +162,7 @@ export const saveBudgetToSheets = async (budget) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        action: budget.budgetId ? 'updateBudget' : 'insertBudget',
+        action,
         ...budget,
         limit: Number(budget.limit || 0)
       })

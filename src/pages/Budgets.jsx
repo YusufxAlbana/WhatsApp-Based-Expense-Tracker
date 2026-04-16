@@ -93,7 +93,10 @@ export default function Budgets() {
       return []
     }
   })
-  const [isLoading, setIsLoading] = useState(() => !localStorage.getItem('weberganize_expenses'))
+  const [isLoading, setIsLoading] = useState(() => {
+    // Jangan set loading = true untuk new user, cukup false supaya UI langsung rapi
+    return false
+  })
 
   // Budgets persisted in localStorage (no dummy defaults – start empty)
   const [budgets, setBudgets] = useState(() => {
@@ -120,6 +123,7 @@ export default function Budgets() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [isBudgetLoading, setIsBudgetLoading] = useState(false)
   const [budgetSyncStatus, setBudgetSyncStatus] = useState(null)
+  const [savingBudgetIds, setSavingBudgetIds] = useState(new Set())  // Track multiple budgets being saved
 
   // ── Auth guard
   useEffect(() => {
@@ -230,15 +234,27 @@ export default function Budgets() {
   const handleSave = async (e) => {
     e.preventDefault()
 
-    const budgetId = editingBudget?.budgetId || editingBudget?.id || `budget-${Date.now()}-${Math.random().toString(36).slice(2,8)}`
+    // Untuk budget BARU (editingBudget = null), jangan generate budgetId dulu
+    // Biarkan backend yang generate. Untuk UPDATE, gunakan budgetId yang sudah ada.
     const payload = {
       userId: user.id,
-      budgetId,
       category: form.category,
       limit: Number(form.limit || 0),
       color: form.color,
       notes: form.notes || ''
     }
+
+    // Hanya tambahkan budgetId jika ini adalah EDIT
+    if (editingBudget) {
+      payload.budgetId = editingBudget.budgetId || editingBudget.id
+    }
+
+    // ── CLOSE MODAL IMMEDIATELY (user bisa pindah halaman)
+    closeModal()
+    
+    // ── SET LOADING STATE (non-blocking) - bisa parallel dengan budget lain
+    const trackedId = payload.budgetId || 'new'
+    setSavingBudgetIds(prev => new Set([...prev, trackedId]))
 
     try {
       await saveBudgetToSheets(payload)
@@ -247,18 +263,31 @@ export default function Budgets() {
       console.error('Gagal menyimpan anggaran:', error)
       alert('Gagal menyimpan anggaran. Coba lagi.')
     } finally {
-      closeModal()
+      setSavingBudgetIds(prev => {
+        const updated = new Set(prev)
+        updated.delete(trackedId)
+        return updated
+      })
     }
   }
 
   const handleDelete = async (id) => {
     if (!window.confirm('Hapus anggaran ini?')) return
+    
+    setSavingBudgetIds(prev => new Set([...prev, id]))
+    
     try {
       await deleteBudgetInSheets({ userId: user.id, budgetId: id })
       await fetchBudgets(false)
     } catch (error) {
       console.error('Gagal menghapus anggaran:', error)
       alert('Gagal menghapus anggaran. Coba lagi.')
+    } finally {
+      setSavingBudgetIds(prev => {
+        const updated = new Set(prev)
+        updated.delete(id)
+        return updated
+      })
     }
   }
 
@@ -280,7 +309,12 @@ export default function Budgets() {
             <p className="dashboard-topbar__subtitle">Pantau batas pengeluaran per kategori secara real-time</p>
           </div>
           <div className="dashboard-topbar__right">
-            <button className="btn-primary" onClick={openAdd}>
+            <button 
+              className="btn-primary" 
+              onClick={openAdd}
+              disabled={savingBudgetIds.size > 0}
+              style={{ opacity: savingBudgetIds.size > 0 ? 0.6 : 1, cursor: savingBudgetIds.size > 0 ? 'not-allowed' : 'pointer' }}
+            >
               <Plus size={16} />
               <span>Budget Baru</span>
             </button>
@@ -371,7 +405,35 @@ export default function Budgets() {
               <div
                 key={b.id}
                 className={`budget-card-item glass-card ${b.isCritical ? 'border-critical' : b.isOver ? 'border-warning' : ''}`}
+                style={{ position: 'relative' }}
               >
+                {/* Loading Overlay - Local (non-blocking) */}
+                {savingBudgetIds.has(b.id) && (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                    backdropFilter: 'blur(1px)'
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{
+                        width: '24px',
+                        height: '24px',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        borderTopColor: '#fff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite',
+                        margin: '0 auto'
+                      }} />
+                    </div>
+                  </div>
+                )}
+
                 {/* Card Header */}
                 <div className="budget-card-header">
                   <div className="category-info">
@@ -387,10 +449,22 @@ export default function Budgets() {
                     </div>
                   </div>
                   <div className="budget-card-actions">
-                    <button className="action-circle edit" onClick={() => openEdit(b)} title="Edit">
+                    <button 
+                      className="action-circle edit" 
+                      onClick={() => openEdit(b)} 
+                      title="Edit"
+                      disabled={savingBudgetIds.size > 0}
+                      style={{ opacity: savingBudgetIds.size > 0 ? 0.5 : 1, cursor: savingBudgetIds.size > 0 ? 'not-allowed' : 'pointer' }}
+                    >
                       <Edit3 size={14} />
                     </button>
-                    <button className="action-circle delete" onClick={() => handleDelete(b.id)} title="Hapus">
+                    <button 
+                      className="action-circle delete" 
+                      onClick={() => handleDelete(b.id)} 
+                      title="Hapus"
+                      disabled={savingBudgetIds.size > 0}
+                      style={{ opacity: savingBudgetIds.size > 0 ? 0.5 : 1, cursor: savingBudgetIds.size > 0 ? 'not-allowed' : 'pointer' }}
+                    >
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -441,7 +515,12 @@ export default function Budgets() {
             ))}
 
             {/* Add Trigger */}
-            <button className="budget-card-item add-card" onClick={openAdd}>
+            <button 
+              className="budget-card-item add-card" 
+              onClick={openAdd}
+              disabled={savingBudgetIds.size > 0}
+              style={{ opacity: savingBudgetIds.size > 0 ? 0.5 : 1, cursor: savingBudgetIds.size > 0 ? 'not-allowed' : 'pointer' }}
+            >
               <div className="add-card-inner">
                 <div className="add-icon-circle"><Plus size={28} /></div>
                 <span>Tambah Anggaran</span>
@@ -511,9 +590,9 @@ export default function Budgets() {
               </div>
 
               <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={closeModal}>Batal</button>
-                <button type="submit" className="btn-primary">
-                  <Save size={16} /> Simpan Anggaran
+                <button type="button" className="btn-secondary" onClick={closeModal} disabled={savingBudgetIds.size > 0}>Batal</button>
+                <button type="submit" className="btn-primary" disabled={savingBudgetIds.size > 0}>
+                  <Save size={16} /> {savingBudgetIds.size > 0 ? 'Menyimpan...' : 'Simpan Anggaran'}
                 </button>
               </div>
             </form>

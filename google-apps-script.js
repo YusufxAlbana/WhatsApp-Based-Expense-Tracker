@@ -1,39 +1,41 @@
 /**
- * Google Apps Script – LedgerLink (Multi-Tab Multi-User Architecture)
+ * Google Apps Script – LedgerLink (Separate Budgets Sheet Architecture)
  * 
- * INSTRUKSI DEPLOY (WAJIB DIIKUTI!):
- * 1. Buka ekstensi Google Apps Script di Google Sheets.
- * 2. Hapus yang lama, paste SELURUH kode baru ini.
- * 3. Simpan (Klik icon disket / Save).
- * 4. Klik "Deploy" > "Manage Deployments".
- * 5. Klik ikon PENSIL (Edit) di deployment aktif.
- * 6. Di bagian VERSION, pilih "New version" (JANGAN BIARKAN VERSI LAMA).
- * 7. Klik Deploy. Selesai!
+ * STRUKTUR:
+ * - Sheet: INDEX (master user list)
+ * - Sheet: {userId} (expenses only)
+ * - Sheet: {userId}+BUDGETS (budgets only, per user)
+ * 
+ * INSTRUKSI DEPLOY:
+ * 1. Hapus kode lama, paste SELURUH ini
+ * 2. Klik Save
+ * 3. Klik Deploy > Manage Deployments
+ * 4. Edit deployment, pilih New version
+ * 5. Deploy
  */
 
 const INDEX_SHEET = 'INDEX';
 const INDEX_HEADERS = ['DAFTAR USER', 'LINK NAVIGASI', 'TERAKHIR AKTIF', 'PASSWORD', 'NAMA', 'PHONE', 'WELCOME_SENT'];
-const BUDGETS_SHEET = 'BUDGETS';
-const BUDGETS_HEADERS = ['userId', 'budgetId', 'category', 'limit', 'color', 'notes', 'createdAt', 'updatedAt'];
+const EXPENSE_HEADERS = ['userId', 'item', 'amount', 'category', 'tanggal', 'timestamp'];
+const BUDGET_HEADERS = ['budgetId', 'category', 'limit', 'color', 'notes', 'createdAt', 'updatedAt'];
+
+function getBudgetsSheetName(userId) {
+  return userId + '+BUDGETS';
+}
 
 function ensureUserRegistered(userId, password = '', name = '', phone = '') {
   if (!userId) return null;
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
+  // Create INDEX sheet
   let indexSheet = ss.getSheetByName(INDEX_SHEET);
   if (!indexSheet) {
     indexSheet = ss.insertSheet(INDEX_SHEET);
     indexSheet.appendRow(INDEX_HEADERS);
     indexSheet.getRange(1, 1, 1, INDEX_HEADERS.length).setFontWeight('bold').setBackground('#4285f4').setFontColor('white');
-  } else {
-    const headerRow = indexSheet.getRange(1, 1, 1, INDEX_HEADERS.length).getValues()[0];
-    INDEX_HEADERS.forEach((header, index) => {
-      if (headerRow[index] !== header) {
-        indexSheet.getRange(1, index + 1).setValue(header).setFontWeight('bold').setBackground('#4285f4').setFontColor('white');
-      }
-    });
   }
 
+  // Find user in INDEX
   const indexData = indexSheet.getDataRange().getValues();
   let userRowIndex = -1;
   for (let i = 1; i < indexData.length; i++) {
@@ -43,15 +45,24 @@ function ensureUserRegistered(userId, password = '', name = '', phone = '') {
     }
   }
 
+  // Create user sheet (expenses only)
   let userSheet = ss.getSheetByName(userId);
-  let isNewUser = false;
   if (!userSheet) {
     userSheet = ss.insertSheet(userId);
-    userSheet.appendRow(['userId', 'item', 'amount', 'category', 'tanggal', 'timestamp']);
-    userSheet.getRange('A1:F1').setFontWeight('bold').setBackground('#0f9d58').setFontColor('white');
-    isNewUser = true;
+    userSheet.appendRow(EXPENSE_HEADERS);
+    userSheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#0f9d58').setFontColor('white');
   }
 
+  // Create budgets sheet (separate)
+  const budgetsSheetName = getBudgetsSheetName(userId);
+  let budgetsSheet = ss.getSheetByName(budgetsSheetName);
+  if (!budgetsSheet) {
+    budgetsSheet = ss.insertSheet(budgetsSheetName);
+    budgetsSheet.appendRow(BUDGET_HEADERS);
+    budgetsSheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#fbbc05').setFontColor('black');
+  }
+
+  // Add or update user
   const timestamp = new Date().toLocaleString('id-ID');
   if (userRowIndex === -1) {
     const sheetId = userSheet.getSheetId();
@@ -59,33 +70,9 @@ function ensureUserRegistered(userId, password = '', name = '', phone = '') {
     indexSheet.appendRow([userId, linkFormula, timestamp, password, name, phone, false]);
   } else {
     indexSheet.getRange(userRowIndex, 3).setValue(timestamp);
-    if (phone) {
-      const phoneCol = INDEX_HEADERS.indexOf('PHONE') + 1;
-      if (phoneCol > 0) {
-        indexSheet.getRange(userRowIndex, phoneCol).setValue(phone);
-      }
-    }
   }
 
-  return { userSheet, isNewUser };
-}
-
-function ensureBudgetsSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(BUDGETS_SHEET);
-  if (!sheet) {
-    sheet = ss.insertSheet(BUDGETS_SHEET);
-    sheet.appendRow(BUDGETS_HEADERS);
-    sheet.getRange(1, 1, 1, BUDGETS_HEADERS.length).setFontWeight('bold').setBackground('#fbbc05').setFontColor('black');
-  } else {
-    const headerRow = sheet.getRange(1, 1, 1, BUDGETS_HEADERS.length).getValues()[0];
-    BUDGETS_HEADERS.forEach((header, index) => {
-      if (headerRow[index] !== header) {
-        sheet.getRange(1, index + 1).setValue(header).setFontWeight('bold').setBackground('#fbbc05').setFontColor('black');
-      }
-    });
-  }
-  return sheet;
+  return { userSheet, budgetsSheet };
 }
 
 function doGet(e) {
@@ -93,101 +80,80 @@ function doGet(e) {
   const userId = params.userId;
   const action = params.action;
   const callbackFn = params.callback;
-
   let result;
+
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
     if (action === 'login') {
       const password = params.password || '';
-      if (!userId || !password) {
-        result = { success: false, error: 'Email dan password wajib diisi' };
-      } else {
-        const indexSheet = ss.getSheetByName(INDEX_SHEET);
-        if (!indexSheet) {
-          result = { success: false, error: 'Sistem sedang belum tersedia (INDEX belum dibuat)' };
-        } else {
-          const indexData = indexSheet.getDataRange().getValues();
-          let foundUser = null;
-          for (let i = 1; i < indexData.length; i++) {
-            if (String(indexData[i][0]).toLowerCase() === String(userId).toLowerCase()) {
-              foundUser = {
-                id: indexData[i][0],
-                password: indexData[i][3],
-                name: indexData[i][4] || indexData[i][0].split('@')[0],
-                phone: indexData[i][5] || ''
-              };
-              break;
-            }
-          }
+      const indexSheet = ss.getSheetByName(INDEX_SHEET);
+      const indexData = indexSheet ? indexSheet.getDataRange().getValues() : [];
+      let foundUser = null;
 
-          if (!foundUser) {
-            result = { success: false, error: 'Email silakan periksa kembali atau belum terdaftar.' };
-          } else if (String(foundUser.password) !== String(password)) {
-            result = { success: false, error: 'Password yang dimasukkan salah.' };
-          } else {
-            result = { success: true, user: { id: foundUser.id, name: foundUser.name, email: foundUser.id, phone: foundUser.phone } };
-          }
+      for (let i = 1; i < indexData.length; i++) {
+        if (String(indexData[i][0]).toLowerCase() === String(userId).toLowerCase()) {
+          foundUser = {
+            id: indexData[i][0],
+            password: indexData[i][3],
+            name: indexData[i][4] || indexData[i][0].split('@')[0]
+          };
+          break;
         }
+      }
+
+      if (!foundUser) {
+        result = { success: false, error: 'User tidak ditemukan' };
+      } else if (String(foundUser.password) !== String(password)) {
+        result = { success: false, error: 'Password salah' };
+      } else {
+        result = { success: true, user: { id: foundUser.id, name: foundUser.name, email: foundUser.id } };
       }
     } else if (action === 'lookupPhone') {
       const phone = params.phone || '';
-      if (!phone) {
-        result = { found: false, error: 'Phone parameter is required' };
-      } else {
-        const indexSheet = ss.getSheetByName(INDEX_SHEET);
-        result = { found: false };
-        if (indexSheet) {
-          const indexData = indexSheet.getDataRange().getValues();
-          for (let i = 1; i < indexData.length; i++) {
-            if (String(indexData[i][5]).replace(/\D/g, '') === String(phone).replace(/\D/g, '')) {
-              result = {
-                found: true,
-                userId: indexData[i][0],
-                name: indexData[i][4] || indexData[i][0].split('@')[0],
-                welcomeSent: String(indexData[i][6]).toLowerCase() === 'true'
-              };
-              break;
-            }
-          }
+      const indexSheet = ss.getSheetByName(INDEX_SHEET);
+      const indexData = indexSheet ? indexSheet.getDataRange().getValues() : [];
+      result = { found: false };
+
+      for (let i = 1; i < indexData.length; i++) {
+        if (String(indexData[i][5]).replace(/\D/g, '') === String(phone).replace(/\D/g, '')) {
+          result = { found: true, userId: indexData[i][0], name: indexData[i][4] || indexData[i][0].split('@')[0], welcomeSent: String(indexData[i][6]).toLowerCase() === 'true' };
+          break;
         }
       }
     } else if (action === 'getBudgets') {
-      const budgetsSheet = ensureBudgetsSheet();
-      const budgetData = budgetsSheet.getDataRange().getValues();
-      if (budgetData.length > 1) {
-        result = budgetData.slice(1).map((row, index) => {
-          const obj = { rowIndex: index + 2 };
-          BUDGETS_HEADERS.forEach((header, i) => {
-            obj[header] = row[i];
-          });
-          return obj;
-        }).filter(row => String(row.userId).toLowerCase() === String(userId).toLowerCase());
-      } else {
-        result = [];
-      }
-    } else {
-      if (userId) {
-        const userSheet = ss.getSheetByName(userId);
-        if (userSheet) {
-          const data = userSheet.getDataRange().getValues();
-          const headers = data[0];
-          let rows = [];
-          if (data.length > 1) {
-            rows = data.slice(1).map((row, index) => {
-              const obj = { rowIndex: index + 2 };
-              headers.forEach((header, i) => {
-                obj[header] = row[i];
-              });
-              return obj;
-            });
+      const budgetsSheetName = getBudgetsSheetName(userId);
+      const budgetsSheet = ss.getSheetByName(budgetsSheetName);
+      result = [];
+
+      if (budgetsSheet) {
+        const data = budgetsSheet.getDataRange().getValues();
+        for (let i = 1; i < data.length; i++) {
+          if (data[i][0] && data[i][0] !== '') {
+            const obj = { rowIndex: i + 1 };
+            for (let j = 0; j < BUDGET_HEADERS.length; j++) {
+              obj[BUDGET_HEADERS[j]] = data[i][j];
+            }
+            result.push(obj);
           }
-          result = rows;
-        } else {
-          result = [];
         }
-      } else {
-        result = { error: 'userId tidak disediakan' };
+      }
+    } else if (userId) {
+      // Get expenses
+      const userSheet = ss.getSheetByName(userId);
+      result = [];
+
+      if (userSheet) {
+        const data = userSheet.getDataRange().getValues();
+        for (let i = 1; i < data.length; i++) {
+          if (data[i][0] && data[i][0] !== '') {
+            const obj = { rowIndex: i + 1 };
+            for (let j = 0; j < EXPENSE_HEADERS.length; j++) {
+              obj[EXPENSE_HEADERS[j]] = data[i][j];
+            }
+            result.push(obj);
+          }
+        }
       }
     }
   } catch (err) {
@@ -208,13 +174,12 @@ function doPost(e) {
     const action = payload.action || 'insert';
     const password = payload.password || '';
     const name = payload.name || '';
-    const phone = payload.phone || '';
 
     if (!userId) {
-      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Silakan sediakan userId' })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'userId required' })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    const { userSheet } = ensureUserRegistered(userId, password, name, phone);
+    const { userSheet, budgetsSheet } = ensureUserRegistered(userId, password, name);
 
     if (action === 'register') {
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
@@ -223,26 +188,20 @@ function doPost(e) {
     if (action === 'markWelcomeSent') {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       const indexSheet = ss.getSheetByName(INDEX_SHEET);
-      if (indexSheet) {
-        const indexData = indexSheet.getDataRange().getValues();
-        for (let i = 1; i < indexData.length; i++) {
-          if (String(indexData[i][0]).toLowerCase() === String(userId).toLowerCase()) {
-            const welcomeCol = INDEX_HEADERS.indexOf('WELCOME_SENT') + 1;
-            if (welcomeCol > 0) {
-              indexSheet.getRange(i + 1, welcomeCol).setValue(true);
-              return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
-            }
-          }
+      const indexData = indexSheet ? indexSheet.getDataRange().getValues() : [];
+
+      for (let i = 1; i < indexData.length; i++) {
+        if (String(indexData[i][0]).toLowerCase() === String(userId).toLowerCase()) {
+          indexSheet.getRange(i + 1, 7).setValue(true);
+          return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'User not found' })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ success: false })).setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === 'insertBudget') {
-      const budgetsSheet = ensureBudgetsSheet();
-      const budgetId = payload.budgetId || `budget-${new Date().getTime()}`;
+      const budgetId = payload.budgetId || `budget-${Date.now()}`;
       budgetsSheet.appendRow([
-        userId,
         budgetId,
         payload.category || '',
         payload.limit || 0,
@@ -255,48 +214,30 @@ function doPost(e) {
     }
 
     if (action === 'updateBudget') {
-      const budgetsSheet = ensureBudgetsSheet();
-      const budgetData = budgetsSheet.getDataRange().getValues();
-      let updated = false;
-      for (let i = 1; i < budgetData.length; i++) {
-        if (String(budgetData[i][0]).toLowerCase() === String(userId).toLowerCase() && String(budgetData[i][1]) === String(payload.budgetId)) {
-          const headers = BUDGETS_HEADERS;
+      const data = budgetsSheet.getDataRange().getValues();
+      for (let i = 0; i < data.length; i++) {
+        if (String(data[i][0]) === String(payload.budgetId)) {
           const rowIndex = i + 1;
-          if (payload.category !== undefined) {
-            const col = headers.indexOf('category') + 1;
-            budgetsSheet.getRange(rowIndex, col).setValue(payload.category);
-          }
-          if (payload.limit !== undefined) {
-            const col = headers.indexOf('limit') + 1;
-            budgetsSheet.getRange(rowIndex, col).setValue(payload.limit);
-          }
-          if (payload.color !== undefined) {
-            const col = headers.indexOf('color') + 1;
-            budgetsSheet.getRange(rowIndex, col).setValue(payload.color);
-          }
-          if (payload.notes !== undefined) {
-            const col = headers.indexOf('notes') + 1;
-            budgetsSheet.getRange(rowIndex, col).setValue(payload.notes);
-          }
-          const updatedCol = headers.indexOf('updatedAt') + 1;
-          budgetsSheet.getRange(rowIndex, updatedCol).setValue(new Date().toISOString());
-          updated = true;
-          break;
+          if (payload.category !== undefined) budgetsSheet.getRange(rowIndex, 2).setValue(payload.category);
+          if (payload.limit !== undefined) budgetsSheet.getRange(rowIndex, 3).setValue(payload.limit);
+          if (payload.color !== undefined) budgetsSheet.getRange(rowIndex, 4).setValue(payload.color);
+          if (payload.notes !== undefined) budgetsSheet.getRange(rowIndex, 5).setValue(payload.notes);
+          budgetsSheet.getRange(rowIndex, 7).setValue(new Date().toISOString());
+          return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: updated })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ success: false })).setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === 'deleteBudget') {
-      const budgetsSheet = ensureBudgetsSheet();
-      const budgetData = budgetsSheet.getDataRange().getValues();
-      for (let i = 1; i < budgetData.length; i++) {
-        if (String(budgetData[i][0]).toLowerCase() === String(userId).toLowerCase() && String(budgetData[i][1]) === String(payload.budgetId)) {
+      const data = budgetsSheet.getDataRange().getValues();
+      for (let i = 0; i < data.length; i++) {
+        if (String(data[i][0]) === String(payload.budgetId)) {
           budgetsSheet.deleteRow(i + 1);
           return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Budget not found' })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ success: false })).setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === 'insert') {
@@ -313,30 +254,18 @@ function doPost(e) {
 
     if (action === 'update') {
       const rowIndex = payload.rowIndex;
-      if (!rowIndex) throw new Error('Row index required');
-      const headers = userSheet.getRange(1, 1, 1, userSheet.getLastColumn()).getValues()[0];
-      if (payload.item !== undefined) {
-        const col = headers.indexOf('item') + 1;
-        if (col > 0) userSheet.getRange(rowIndex, col).setValue(payload.item);
-      }
-      if (payload.amount !== undefined) {
-        const col = headers.indexOf('amount') + 1;
-        if (col > 0) userSheet.getRange(rowIndex, col).setValue(payload.amount);
-      }
-      if (payload.category !== undefined) {
-        const col = headers.indexOf('category') + 1;
-        if (col > 0) userSheet.getRange(rowIndex, col).setValue(payload.category);
-      }
+      if (payload.item !== undefined) userSheet.getRange(rowIndex, 2).setValue(payload.item);
+      if (payload.amount !== undefined) userSheet.getRange(rowIndex, 3).setValue(payload.amount);
+      if (payload.category !== undefined) userSheet.getRange(rowIndex, 4).setValue(payload.category);
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === 'delete') {
-      const rowIndex = payload.rowIndex;
-      userSheet.deleteRow(rowIndex);
+      userSheet.deleteRow(payload.rowIndex);
       return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ success: false })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message })).setMimeType(ContentService.MimeType.JSON);
   }

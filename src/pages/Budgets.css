@@ -2,6 +2,16 @@
    Budgets Page – Complete CSS
    ================================================ */
 
+/* ── Spin Animation ───────────────────────────── */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ── Hide Ugly Number Input Spinners ─────────── */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {

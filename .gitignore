@@ -24,3 +24,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# WhatsApp web session cache (PENTING untuk diabaikan)
+wa-server/session/
+wa-server/.wwebjs_auth/
+.wwebjs_auth/

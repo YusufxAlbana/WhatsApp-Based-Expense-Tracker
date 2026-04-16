@@ -18,7 +18,10 @@ let clientReady = false;
 
 // --- INISIALISASI CLIENT WHATSAPP ---
 const client = new Client({
-  authStrategy: new LocalAuth(), // Simpan sesi agar tidak perlu scan QR tiap kali
+  authStrategy: new LocalAuth({
+    dataPath: path.resolve(__dirname, 'session'),
+    clientId: 'whatsapp-bot',
+  }), // Simpan sesi agar tidak perlu scan QR tiap kali
   puppeteer: {
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
